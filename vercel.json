@@ -16,7 +16,9 @@
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/login", "destination": "/login.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
