@@ -1874,6 +1874,58 @@ body.lang-en .ns-footer-enhanced .footer-links a:hover {
 }
 
 @media (max-width: 768px) {
+  html {
+    scroll-behavior: auto;
+  }
+  body,
+  .page-wrapper,
+  .navbar,
+  .hero-ultra,
+  .category-card,
+  .opp-card,
+  .course-card,
+  .footer {
+    transform: none !important;
+    will-change: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .hero-bg,
+  .hero-bg-animated-shapes,
+  .floating-shape,
+  .hero-orb,
+  .hero-bg-grid,
+  .hero-bg-gradient,
+  .hero-orb-1,
+  .hero-orb-2 {
+    animation: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .floating-shape,
+  .hero-bg-animated-shapes {
+    display: none !important;
+  }
+  .navbar,
+  .mobile-bottom-nav,
+  .elv-modal,
+  .elv-modal-box,
+  .ns-footer-enhanced,
+  .hero-ultra,
+  .hero-content-centered,
+  .hero-search-box,
+  .hero-cta,
+  .category-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .hero-bg-gradient {
+    background: linear-gradient(180deg, #090d16 0%, #111936 100%) !important;
+  }
   .page-wrapper,
   .navbar,
   .hero-ultra,

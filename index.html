@@ -112,6 +112,10 @@
         if (document.readyState === 'interactive' || document.readyState === 'complete') {
           document.body.classList.add('loaded');
         }
+
+        if (window.matchMedia('(max-width: 768px)').matches) {
+          document.documentElement.classList.add('elevate-mobile-reduced-motion');
+        }
       })();
     </script>
     <script src="supabase-client.js"></script>
