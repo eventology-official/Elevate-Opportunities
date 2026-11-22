@@ -80,15 +80,6 @@
 
   function ensureSubmitUI() {
     if (document.getElementById("elv-submit-fab")) return;
-    var fab = document.createElement("button");
-    fab.id = "elv-submit-fab";
-    fab.type = "button";
-    fab.setAttribute("aria-hidden", "true");
-    fab.setAttribute("tabindex", "-1");
-    fab.innerHTML = '<i class="fas fa-paper-plane"></i> أرسل فرصة';
-    fab.onclick = openSubmitModal;
-    document.body.appendChild(fab);
-
     var wrap = document.createElement("div");
     wrap.id = "elv-submit-modal";
     wrap.className = "elv-modal";

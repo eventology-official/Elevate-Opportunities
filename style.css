@@ -3927,6 +3927,8 @@ body.lang-en .info-icon {
   display: inline;
   color: var(--text-primary);
   white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 .mobile-community-btn,
 .mobile-lang-btn {
