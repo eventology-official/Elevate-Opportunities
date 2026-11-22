@@ -2909,8 +2909,7 @@ const App = {
       <nav class="navbar">
         <div class="navbar-inner">
           <a href="index.html" class="navbar-logo">
-            <img src="images/logo.png" alt="Elevate Logo" style="width: 36px; height: auto; object-fit: contain; border-radius: 8px;">
-            <span class="navbar-logo-text">Elevate Opportunities</span>
+            <img src="images/logo.png" alt="Elevate Opportunities" style="width: 150px; height: 42px; object-fit: contain;">
           </a>
           
           <div class="navbar-nav hide-on-mobile">
@@ -2973,8 +2972,7 @@ const App = {
       <div class="mobile-nav">
         <div class="mobile-nav-header">
            <a href="index.html" class="navbar-logo">
-             <img src="images/logo.png" alt="Elevate Logo" style="width: 36px; height: auto; object-fit: contain; border-radius: 8px;">
-             <span class="navbar-logo-text">Elevate Opportunities</span>
+             <img src="images/logo.png" alt="Elevate Opportunities" style="width: 150px; height: 42px; object-fit: contain;">
            </a>
            <button class="mobile-close-btn" onclick="document.querySelector('.mobile-nav').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('open');"><i class="fas fa-times"></i></button>
         </div>
