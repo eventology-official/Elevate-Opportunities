@@ -1,7 +1,7 @@
 {
   "name": "elevate-opportunities",
   "version": "1.0.0",
-  "description": "منصة Elevate - مسابقات ومنح وتطوع ووظائف",
+  "description": "Elevate Opportunities - مسابقات ومنح وتطوع ووظائف",
   "scripts": {
     "start": "node standalone-server.js",
     "build": "node build-static.js"

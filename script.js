@@ -2910,7 +2910,7 @@ const App = {
         <div class="navbar-inner">
           <a href="index.html" class="navbar-logo">
             <img src="images/logo.png" alt="Elevate Logo" style="width: 36px; height: auto; object-fit: contain; border-radius: 8px;">
-            <span class="navbar-logo-text">Elevate</span>
+            <span class="navbar-logo-text">Elevate Opportunities</span>
           </a>
           
           <div class="navbar-nav hide-on-mobile">
@@ -2974,7 +2974,7 @@ const App = {
         <div class="mobile-nav-header">
            <a href="index.html" class="navbar-logo">
              <img src="images/logo.png" alt="Elevate Logo" style="width: 36px; height: auto; object-fit: contain; border-radius: 8px;">
-             <span class="navbar-logo-text">Elevate</span>
+             <span class="navbar-logo-text">Elevate Opportunities</span>
            </a>
            <button class="mobile-close-btn" onclick="document.querySelector('.mobile-nav').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('open');"><i class="fas fa-times"></i></button>
         </div>
@@ -3027,7 +3027,7 @@ const App = {
             <div class="footer-col footer-col-brand">
                 <a href="index.html" class="footer-logo">
                     <img src="images/logo.png" alt="Elevate Logo" class="footer-logo-img">
-                    <span class="footer-logo-text">Elevate</span>
+                    <span class="footer-logo-text">Elevate Opportunities</span>
                     <span class="footer-verified-badge"><i class="fas fa-check-circle"></i> منصة موثوقة</span>
                 </a>
                 <p class="footer-desc">
@@ -3073,7 +3073,7 @@ const App = {
 
         <div class="footer-bottom">
             <div class="footer-copy">
-                &copy; ${year} <strong>Elevate</strong>. جميع الحقوق محفوظة لرواد المستقبل.
+                &copy; ${year} <strong>Elevate Opportunities</strong>. جميع الحقوق محفوظة لرواد المستقبل.
             </div>
             <div class="footer-bottom-links">
                 <span><i class="fas fa-lock"></i> خصوصية وأمان عالي</span>
