@@ -114,6 +114,17 @@
       }
     },
 
+    healthCheck: async function () {
+      try {
+        await restRequest('users?select=id&limit=1');
+        this.isReady = true;
+        return true;
+      } catch (e) {
+        this.isReady = false;
+        throw e;
+      }
+    },
+
     // 1. Store Management (public.site_store)
     fetchStore: async function () {
       try {

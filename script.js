@@ -3895,8 +3895,75 @@ function startSession(user) {
 }
 
 function authRequest(payload) {
-  // OFFLINE MODE: All server auth disabled - use fallback local auth only
-  return Promise.reject(new Error("Offline mode - using local authentication"));
+  if (!window.ElevateSupabase) {
+    return Promise.reject(new Error("قاعدة البيانات غير متاحة"));
+  }
+  return ElevateSupabase.healthCheck()
+    .then(async function () {
+      if (payload.action === "login") {
+        var user = await ElevateSupabase.findUser(payload.identifier);
+        if (!user) return { ok: false, data: { error: "اسم المستخدم أو الحساب غير موجود." } };
+        var valid = await ElevateSupabase.verifyPassword(
+          payload.password,
+          user.password_hash || user.password || "",
+        );
+        if (!valid) return { ok: false, data: { error: "كلمة المرور غير صحيحة." } };
+        return { ok: true, data: { user: user } };
+      }
+
+      if (payload.action === "register") {
+        var existing =
+          (await ElevateSupabase.findUser(payload.username)) ||
+          (payload.email ? await ElevateSupabase.findUser(payload.email) : null) ||
+          (payload.phone ? await ElevateSupabase.findUser(payload.phone) : null);
+        if (existing) {
+          return { ok: false, data: { error: "اسم المستخدم أو البريد أو الهاتف مسجل مسبقًا." } };
+        }
+        var newUser = {
+          id: "usr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+          username: payload.username,
+          email: payload.email || "",
+          phone: payload.phone || "",
+          fullName: payload.fullName || payload.username,
+          password: payload.password,
+          isAdmin: false,
+          isTeacher: false,
+          isActive: true,
+          isOnline: true,
+          provider: "credentials",
+          join_date: new Date().toLocaleDateString("ar-EG"),
+          join_timestamp: Date.now()
+        };
+        var saved = await ElevateSupabase.saveUser(newUser);
+        return { ok: true, data: { user: saved } };
+      }
+
+      if (payload.action === "google_login") {
+        var email = payload.email || "";
+        var googleUser = email ? await ElevateSupabase.findUser(email) : null;
+        if (!googleUser) {
+          googleUser = {
+            id: "usr_google_" + Date.now(),
+            username: (email.split("@")[0] || "google") + "_" + Math.random().toString(36).slice(2, 6),
+            email: email,
+            fullName: payload.fullName || "مستخدم Google",
+            password: "",
+            isAdmin: false,
+            isTeacher: false,
+            isActive: true,
+            isOnline: true,
+            provider: "google",
+            googleId: "google_" + Date.now(),
+            join_date: new Date().toLocaleDateString("ar-EG"),
+            join_timestamp: Date.now()
+          };
+          googleUser = await ElevateSupabase.saveUser(googleUser);
+        }
+        return { ok: true, data: { user: googleUser } };
+      }
+
+      return Promise.reject(new Error("عملية مصادقة غير معروفة"));
+    });
 }
 
 function handleLogin(event) {
@@ -3920,8 +3987,13 @@ function handleLogin(event) {
       }
       fallbackLocalLogin(identifier, password);
     })
-    .catch(function () {
-      fallbackLocalLogin(identifier, password);
+    .catch(function (err) {
+      showAlert(
+        err && /خدمة|قاعدة البيانات|network|fetch/i.test(err.message)
+          ? "تعذر الاتصال بقاعدة البيانات. تحقق من الشبكة وحاول مرة أخرى."
+          : "تعذر تسجيل الدخول. يرجى المحاولة مرة أخرى.",
+        "error",
+      );
     });
 }
 
@@ -4034,8 +4106,13 @@ function handleRegister(event) {
       }
       showAlert("تعذر إنشاء الحساب، يرجى المحاولة مرة أخرى.", "error");
     })
-    .catch(function () {
-      showAlert("تعذر الاتصال بقاعدة البيانات والسيرفر.", "error");
+    .catch(function (err) {
+      showAlert(
+        err && /خدمة|قاعدة البيانات|network|fetch/i.test(err.message)
+          ? "تعذر الاتصال بقاعدة البيانات. تحقق من الشبكة وحاول مرة أخرى."
+          : "تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى.",
+        "error",
+      );
     });
 }
 
@@ -4148,6 +4225,8 @@ function handleGoogleCredentialResponse(response) {
 }
 
 function showGoogleQuickModal() {
+  showAlert("تسجيل Google الرسمي يحتاج تفعيل OAuth من Google Cloud، وهو غير متاح مؤقتًا.", "info");
+  return;
   var oldModal = document.getElementById("googleQuickModal");
   if (oldModal) oldModal.remove();
 

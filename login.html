@@ -502,7 +502,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-client.js"></script>
+  <script src="supabase-client.js?v=auth-cloud-1"></script>
   <script src="lockdown-system.js"></script>
   <script>
     function showAlert(msg, type) {
@@ -577,22 +577,11 @@
       showAlert("جاري التحقق من البيانات عبر قاعدة بيانات Supabase...", "info");
       
       try {
+        if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
+        await ElevateSupabase.healthCheck();
         let user = null;
         if (window.ElevateSupabase && typeof ElevateSupabase.findUser === "function") {
           user = await ElevateSupabase.findUser(identifier);
-        }
-
-        // Fallback to local cache
-        if (!user) {
-          const users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
-          const identLower = identifier.toLowerCase();
-          user = users.find(u => {
-            if (!u) return false;
-            const usernameLower = (u.username || "").toLowerCase();
-            const emailLower = (u.email || "").toLowerCase();
-            const phone = (u.phone || "").trim();
-            return usernameLower === identLower || emailLower === identLower || phone === identifier;
-          });
         }
 
         if (!user) {
@@ -764,6 +753,8 @@
       showAlert("جاري إنشاء الحساب وحفظه في قاعدة البيانات السحابية (Supabase)...", "info");
 
       try {
+        if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
+        await ElevateSupabase.healthCheck();
         if (window.ElevateSupabase) {
           const existing = await ElevateSupabase.findUser(username) || 
                            (email ? await ElevateSupabase.findUser(email) : null) || 
@@ -797,11 +788,6 @@
           console.log("☁ [Supabase] تم تسجيل وحفظ المستخدم الجديد في السحابة!");
         }
 
-        // Cache locally
-        const users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
-        users.push(newUser);
-        localStorage.setItem("luxen_all_users", JSON.stringify(users));
-        
         showAlert("تم إنشاء الحساب وحفظه سحابياً بنجاح!", "success");
         saveSessionAndRedirect(newUser);
         
@@ -812,53 +798,7 @@
     }
 
     async function handleGoogleSignIn() {
-      var name = prompt("أدخل اسمك لتسجيل الدخول الفوري بحساب Google:", "مستخدم جوجل");
-      if (!name) return;
-      var email = prompt("أدخل بريدك الإلكتروني لـ Google:", name.replace(/\s+/g, "").toLowerCase() + "@gmail.com");
-      if (!email) return;
-
-      showAlert("جاري تسجيل الدخول وحفظ البيانات في سحابة Supabase...", "info");
-
-      try {
-        let user = null;
-        if (window.ElevateSupabase) {
-          user = await ElevateSupabase.findUser(email);
-        }
-
-        if (!user) {
-          user = {
-            id: "usr_google_" + Date.now(),
-            username: email.split("@")[0] + "_" + Math.random().toString(36).slice(2, 6),
-            email: email,
-            fullName: name,
-            full_name: name,
-            password: "",
-            isAdmin: false,
-            isTeacher: false,
-            isActive: true,
-            isOnline: true,
-            provider: "google",
-            googleId: "google_" + Date.now(),
-            join_date: new Date().toLocaleDateString("ar-EG"),
-            join_timestamp: Date.now()
-          };
-
-          if (window.ElevateSupabase) {
-            await ElevateSupabase.saveUser(user);
-          }
-        }
-
-        const users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
-        if (!users.some(u => u.email === email)) {
-          users.push(user);
-          localStorage.setItem("luxen_all_users", JSON.stringify(users));
-        }
-
-        saveSessionAndRedirect(user);
-      } catch(e) {
-        console.error("Google signin error:", e);
-        showAlert("حدث خطأ في تسجيل الدخول بواسطة Google.", "error");
-      }
+      showAlert("تسجيل Google الرسمي يحتاج تفعيل OAuth من لوحة Google Cloud، واختياره مؤقتًا غير متاح.", "info");
     }
 
     async function handleForgot(event) {
