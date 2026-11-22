@@ -248,6 +248,7 @@ const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".webmanifest": "application/manifest+json",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -512,7 +513,13 @@ const server = http.createServer(async (req, res) => {
   } else {
     targetFile = path.join(APP_DIR, pathname.replace(/^\//, ""));
     if (!fs.existsSync(targetFile)) {
-      targetFile = path.join(APP_DIR, "index.html");
+      const ext = path.extname(targetFile);
+      if (!ext || ext === ".html") {
+        targetFile = path.join(APP_DIR, "index.html");
+      } else {
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        return res.end("404 Not Found");
+      }
     }
   }
 
