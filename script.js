@@ -313,9 +313,10 @@ const Admin = {
         "adm-sec-settings", // ✅ إضافة صفحة الإعدادات
         "adm-sec-vault",
         "adm-sec-visibility", // ✅ إضافة صفحة ظهور الأقسام
+        "adm-sec-lockdown", // ✅ إضافة صفحة قفل وتطوير المنصة
       ];
     }
-    const set = new Set(["adm-sec-overview"]);
+    const set = new Set(["adm-sec-overview", "adm-sec-lockdown"]);
     (perms || []).forEach((p) => {
       const secs = this.PERM_SECTIONS[p];
       if (Array.isArray(secs)) secs.forEach((s) => set.add(s));

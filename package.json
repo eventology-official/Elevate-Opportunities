@@ -1,9 +1,9 @@
 {
-  "name": "elevate-standalone",
+  "name": "elevate-opportunities",
   "version": "1.0.0",
-  "description": "منصة Elevate المستقلة مع السيرفر وقاعدة البيانات",
-  "main": "server.js",
+  "description": "منصة Elevate - مسابقات ومنح وتطوع ووظائف",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "echo 'Build complete'"
   }
 }

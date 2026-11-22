@@ -1720,7 +1720,7 @@
                         Elevate.
                       </p>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: center">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                       <span class="admin-meta-pill pill-green"
                         ><i class="fas fa-circle-check"></i> النظام يعمل بكفاءة 100%</span
                       >
@@ -1730,6 +1730,15 @@
                         onclick="Admin.switchSection('adm-sec-add-opp')"
                       >
                         <i class="fas fa-plus"></i> نشر فرصة جديدة
+                      </button>
+                      <button
+                        type="button"
+                        class="admin-btn-hero"
+                        style="background: linear-gradient(135deg, #dc2626, #991b1b); color: #fff; border: 1px solid #ef4444; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); cursor: pointer;"
+                        onclick="Admin.switchSection('adm-sec-lockdown')"
+                        title="قفل وتطوير المنصة بمهلة 5 دقائق وإنذار صوتي"
+                      >
+                        <i class="fas fa-power-off"></i> قفل وتطوير المنصة
                       </button>
                     </div>
                   </div>
