@@ -4,6 +4,6 @@
   "description": "منصة Elevate - مسابقات ومنح وتطوع ووظائف",
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'Build complete'"
+    "build": "node build-static.js"
   }
 }
