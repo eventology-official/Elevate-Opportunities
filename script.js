@@ -2909,7 +2909,8 @@ const App = {
       <nav class="navbar">
         <div class="navbar-inner">
           <a href="index.html" class="navbar-logo">
-            <img src="images/logo.png" alt="Elevate Opportunities" style="width: 150px; height: 42px; object-fit: contain;">
+            <img src="images/logo-icon.png" alt="Elevate Opportunities" class="navbar-logo-icon">
+            <span class="navbar-logo-name">Elevate Opportunities</span>
           </a>
           
           <div class="navbar-nav hide-on-mobile">
@@ -2962,6 +2963,8 @@ const App = {
                 <button class="lang-btn">${isAr ? "EN" : "AR"}</button>
             </div>
             ${!loggedIn ? `<button class="navbar-btn-icon ui-icon-btn hide-on-mobile" onclick="window.location.href='?view=login'"><i class="fas fa-bookmark"></i></button>` : ""}
+            <a class="navbar-btn-icon mobile-community-btn" href="?view=community" aria-label="${isAr ? "المجتمع" : "Community"}"><i class="fas fa-comments"></i></a>
+            <button class="lang-btn mobile-lang-btn" type="button" aria-label="${isAr ? "تغيير اللغة" : "Change language"}">${isAr ? "EN" : "AR"}</button>
             
             ${authHtml}
             <button class="navbar-btn-icon menu-toggle" onclick="document.querySelector('.mobile-nav').classList.add('open'); document.querySelector('.sidebar-overlay').classList.add('open');"><i class="fas fa-bars"></i></button>
@@ -2972,7 +2975,8 @@ const App = {
       <div class="mobile-nav">
         <div class="mobile-nav-header">
            <a href="index.html" class="navbar-logo">
-             <img src="images/logo.png" alt="Elevate Opportunities" style="width: 150px; height: 42px; object-fit: contain;">
+             <img src="images/logo-icon.png" alt="Elevate Opportunities" class="navbar-logo-icon">
+             <span class="navbar-logo-name">Elevate Opportunities</span>
            </a>
            <button class="mobile-close-btn" onclick="document.querySelector('.mobile-nav').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('open');"><i class="fas fa-times"></i></button>
         </div>

@@ -83,6 +83,8 @@
     var fab = document.createElement("button");
     fab.id = "elv-submit-fab";
     fab.type = "button";
+    fab.setAttribute("aria-hidden", "true");
+    fab.setAttribute("tabindex", "-1");
     fab.innerHTML = '<i class="fas fa-paper-plane"></i> أرسل فرصة';
     fab.onclick = openSubmitModal;
     document.body.appendChild(fab);
@@ -135,7 +137,7 @@
       '<span class="elv-wa-topbar"></span>' +
       '<button type="button" class="elv-x" onclick="ElevateExtras.closeWelcome()">&times;</button>' +
       '<div class="elv-wa-icon"><i class="fab fa-whatsapp"></i></div>' +
-      '<div class="elv-wa-pill"><span class="elv-wa-dot"></span> خطوة مهمة (تختفي خلال 5 ثوانٍ)</div>' +
+      '<div class="elv-wa-pill"><span class="elv-wa-dot"></span> لا تفوّت الفرص الجديدة</div>' +
       '<h3>الفرص على واتساب <span class="elv-wa-hl">أول بأول</span></h3>' +
       '<p class="elv-wa-sub">عشان توصلك الفرص فور نزولها! تابع قناتنا على واتساب.</p>' +
       '<div class="elv-wa-chips">' +
@@ -159,11 +161,6 @@
       if (e.target === wrap) closeWelcome();
     });
 
-    // تختفي بعد 5 ثواني بالضبط
-    if (welcomeTimer) clearTimeout(welcomeTimer);
-    welcomeTimer = setTimeout(function () {
-      closeWelcome();
-    }, 5000);
   }
   function closeWelcome() {
     if (welcomeTimer) {
@@ -653,10 +650,10 @@
     var st = document.createElement("style");
     st.id = "elv-styles";
     st.textContent = [
-      "#elv-submit-fab{position:fixed;left:20px;bottom:20px;z-index:9000;border:0;cursor:pointer;",
+      "#elv-submit-fab{display:none!important}",
+      ".elv-submit-fab-hidden{position:fixed;left:20px;bottom:20px;z-index:9000;border:0;cursor:pointer;",
       "background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:12px 18px;border-radius:50px;",
       "font-family:inherit;font-size:.9rem;font-weight:700;box-shadow:0 10px 24px rgba(99,102,241,.35);display:flex;gap:8px;align-items:center}",
-      "#elv-submit-fab:hover{transform:translateY(-2px)}",
       ".elv-modal{display:none;position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.75);backdrop-filter:blur(6px);",
       "align-items:center;justify-content:center;padding:16px}",
       ".elv-modal.open{display:flex}",
@@ -711,6 +708,18 @@
       ".elv-wa-links button:hover{color:#c3cbf0}",
       ".elv-wa-links span{color:#3b4468}",
       "#elv-detail-vote .elv-vote{width:auto;display:inline-flex;margin-inline-start:8px}",
+      "@media(max-width:768px){",
+      ".elv-modal{padding:12px;}",
+      ".elv-modal-box{width:min(92vw,560px)!important;margin:auto!important;}",
+      ".elv-wa-card{padding:24px 18px 18px!important;border-radius:18px!important;}",
+      ".elv-wa-card h3{font-size:1.35rem}",
+      ".elv-wa-sub{font-size:.82rem}",
+      ".elv-wa-chips{gap:6px}",
+      ".elv-wa-chip{padding:6px 9px;font-size:.72rem}",
+      ".elv-wa-follow{padding:13px 16px;font-size:.95rem}",
+      ".hero-quick-pills{display:flex;flex-wrap:wrap;justify-content:center}",
+      ".hero-pill-item.pill-submit{order:3}",
+      "}",
     ].join("");
     document.head.appendChild(st);
   }
