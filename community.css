@@ -1330,7 +1330,9 @@
 @media (max-width: 768px) {
   body:has(#community-view) .ns-footer-enhanced,
   body:has(#community-view) .mobile-bottom-nav,
-  body:has(#community-view) #welcome-card {
+  body:has(#community-view) #elv-welcome,
+  body:has(#community-view) #elevate-ai-fab,
+  body:has(#community-view) .wow-daily-tip {
     display: none !important;
   }
   #community-view {

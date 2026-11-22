@@ -538,7 +538,7 @@
       });
 
       return `
-        <div class="comm-chat-frame ${isPrivate ? "viewing-chat" : "viewing-list"}">
+        <div class="comm-chat-frame ${this.activeTab === "public" || isPrivate ? "viewing-chat" : "viewing-list"}">
           <!-- Sidebar -->
           <div class="comm-sidebar">
             <div class="comm-sidebar-header">
