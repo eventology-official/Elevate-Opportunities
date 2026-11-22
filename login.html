@@ -578,7 +578,6 @@
       
       try {
         if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
-        await ElevateSupabase.healthCheck();
         let user = null;
         if (window.ElevateSupabase && typeof ElevateSupabase.findUser === "function") {
           user = await ElevateSupabase.findUser(identifier);
@@ -751,16 +750,27 @@
       }
 
       showAlert("جاري إنشاء الحساب وحفظه في قاعدة البيانات السحابية (Supabase)...", "info");
+      var submitBtn = event.submitter || document.querySelector('#registerFormElement button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalHtml = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري إنشاء الحساب...';
+      }
 
       try {
         if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
-        await ElevateSupabase.healthCheck();
         if (window.ElevateSupabase) {
-          const existing = await ElevateSupabase.findUser(username) || 
-                           (email ? await ElevateSupabase.findUser(email) : null) || 
-                           (phone ? await ElevateSupabase.findUser(phone) : null);
+          const checks = [ElevateSupabase.findUser(username)];
+          if (email) checks.push(ElevateSupabase.findUser(email));
+          if (phone) checks.push(ElevateSupabase.findUser(phone));
+          const matches = await Promise.all(checks);
+          const existing = matches.find(Boolean);
           if (existing) {
             showAlert("اسم المستخدم أو البريد أو الهاتف مسجل مسبقاً في قاعدة البيانات.", "error");
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'إنشاء الحساب';
+            }
             return;
           }
         }
@@ -794,6 +804,10 @@
       } catch(e) {
         console.error("Register error:", e);
         showAlert("حدث خطأ في إنشاء الحساب: " + (e.message || ""), "error");
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'إنشاء الحساب';
+        }
       }
     }
 

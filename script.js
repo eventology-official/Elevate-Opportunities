@@ -3898,7 +3898,7 @@ function authRequest(payload) {
   if (!window.ElevateSupabase) {
     return Promise.reject(new Error("قاعدة البيانات غير متاحة"));
   }
-  return ElevateSupabase.healthCheck()
+  return Promise.resolve()
     .then(async function () {
       if (payload.action === "login") {
         var user = await ElevateSupabase.findUser(payload.identifier);
@@ -3912,10 +3912,11 @@ function authRequest(payload) {
       }
 
       if (payload.action === "register") {
-        var existing =
-          (await ElevateSupabase.findUser(payload.username)) ||
-          (payload.email ? await ElevateSupabase.findUser(payload.email) : null) ||
-          (payload.phone ? await ElevateSupabase.findUser(payload.phone) : null);
+        var checks = [ElevateSupabase.findUser(payload.username)];
+        if (payload.email) checks.push(ElevateSupabase.findUser(payload.email));
+        if (payload.phone) checks.push(ElevateSupabase.findUser(payload.phone));
+        var matches = await Promise.all(checks);
+        var existing = matches.find(Boolean);
         if (existing) {
           return { ok: false, data: { error: "اسم المستخدم أو البريد أو الهاتف مسجل مسبقًا." } };
         }

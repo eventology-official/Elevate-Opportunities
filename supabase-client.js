@@ -28,11 +28,17 @@
       'Content-Type': 'application/json'
     }, options.headers || {});
 
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timeoutId = controller
+      ? setTimeout(function () { controller.abort(); }, 15000)
+      : null;
     var res = await fetch(url, {
       method: options.method || 'GET',
       headers: headers,
-      body: options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : undefined
+      body: options.body ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body)) : undefined,
+      signal: controller ? controller.signal : undefined
     });
+    if (timeoutId) clearTimeout(timeoutId);
 
     if (!res.ok) {
       var errText = '';
@@ -51,7 +57,7 @@
       window.crypto.getRandomValues(randomBytes);
       salt = btoa(String.fromCharCode.apply(null, Array.from(randomBytes)));
     }
-    var iterations = 100000;
+    var iterations = 32000;
     var enc = new TextEncoder();
     var keyMaterial = await window.crypto.subtle.importKey(
       'raw',

@@ -1327,6 +1327,94 @@
   }
 }
 
+@media (max-width: 768px) {
+  #community-view {
+    height: calc(100dvh - 58px - 64px);
+    min-height: 0 !important;
+    padding: 6px 6px 8px !important;
+  }
+  #community-view .comm-container {
+    height: 100%;
+  }
+  #community-view .comm-hub-header {
+    min-height: 0;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 12px;
+  }
+  #community-view .comm-hub-logo,
+  #community-view .comm-hub-info p,
+  #community-view .comm-live-pill {
+    display: none;
+  }
+  #community-view .comm-hub-info h2 {
+    font-size: 0.95rem;
+  }
+  #community-view .comm-tabs-nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+  }
+  #community-view .comm-tab-btn {
+    min-width: 0;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 0.68rem;
+  }
+  #community-view .comm-tab-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #community-view .comm-chat-frame {
+    height: calc(100dvh - 58px - 64px - 118px);
+    min-height: 360px;
+  }
+  #community-view .comm-sidebar,
+  #community-view .comm-main-panel {
+    border-radius: 12px;
+  }
+  #community-view .comm-sidebar-header {
+    padding: 8px;
+  }
+  #community-view .comm-convs-list {
+    padding: 4px;
+  }
+  #community-view .comm-chat-topbar {
+    padding: 8px 10px;
+  }
+  #community-view .comm-messages-stream {
+    padding: 10px;
+    gap: 8px;
+  }
+  #community-view .comm-msg-row {
+    max-width: 92%;
+  }
+  #community-view .comm-msg-bubble {
+    padding: 8px 10px;
+    font-size: 0.84rem;
+  }
+  #community-view .comm-input-deck {
+    padding: 7px 8px;
+    gap: 6px;
+  }
+  #community-view .comm-input-btn {
+    width: 36px;
+    height: 36px;
+  }
+  #community-view .comm-input-field {
+    min-width: 0;
+    padding: 9px 10px;
+    font-size: 0.84rem;
+  }
+  #community-view .comm-send-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 .admin-pchats-sidebar {
   background: #111827;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
