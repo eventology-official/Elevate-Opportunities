@@ -129,8 +129,13 @@
   }
 
   // -------------------------------------------------------------
-  // 3. User Checks
+  // 3. User & Page Checks
   // -------------------------------------------------------------
+  function isLoginPage() {
+    var p = (window.location.pathname || '').toLowerCase();
+    return p.includes('login') || (window.location.href || '').toLowerCase().includes('login.html');
+  }
+
   function isCurrentUserAdmin() {
     try {
       var user = JSON.parse(localStorage.getItem('ns_user') || 'null');
@@ -169,18 +174,63 @@
     if (state.isLocked) {
       if (isCurrentUserAdmin()) {
         removeMaintenanceOverlay();
+        removeLoginMaintenanceNotice();
         renderAdminBypassBar();
+      } else if (isLoginPage()) {
+        // On login.html, allow users to register or login without full screen overlay
+        removeMaintenanceOverlay();
+        removeAdminBypassBar();
+        renderLoginMaintenanceNotice();
       } else {
         removeAdminBypassBar();
+        removeLoginMaintenanceNotice();
         renderMaintenanceOverlay();
       }
     } else {
       removeMaintenanceOverlay();
       removeAdminBypassBar();
+      removeLoginMaintenanceNotice();
     }
 
     // Update Admin Panel UI if visible
     renderAdminSectionUI();
+  }
+
+  function renderLoginMaintenanceNotice() {
+    var notice = document.getElementById('elevate-login-lockdown-notice');
+    if (!notice) {
+      var card = document.querySelector('.login-auth-card') || document.querySelector('.login-container');
+      if (!card) return;
+      notice = document.createElement('div');
+      notice.id = 'elevate-login-lockdown-notice';
+      notice.style.cssText = [
+        'background: rgba(239, 68, 68, 0.15)',
+        'border: 1px solid rgba(239, 68, 68, 0.45)',
+        'border-radius: 14px',
+        'padding: 14px 18px',
+        'margin-bottom: 22px',
+        'color: #fca5a5',
+        'font-family: Cairo, sans-serif',
+        'direction: rtl',
+        'font-size: 0.92rem',
+        'line-height: 1.6',
+        'text-align: center'
+      ].join(';');
+      card.insertBefore(notice, card.firstChild);
+    }
+    notice.innerHTML = `
+      <div style="font-weight:900;color:#f87171;font-size:1.05rem;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <i class="fas fa-triangle-exclamation"></i> وضع التطوير والصيانة الإدارية نشط
+      </div>
+      <div>
+        المنصة مغلقة حالياً للتطوير والتحديث. يمكنك <strong>إنشاء حسابك الجديد الآن</strong> ليكون مفعلاً فور فتح المنصة، أو تسجيل الدخول بصلاحيات الإدارة لتجاوز شاشة الصيانة.
+      </div>
+    `;
+  }
+
+  function removeLoginMaintenanceNotice() {
+    var notice = document.getElementById('elevate-login-lockdown-notice');
+    if (notice) notice.remove();
   }
 
   // -------------------------------------------------------------
