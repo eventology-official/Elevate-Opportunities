@@ -121,7 +121,7 @@
 
       // 2. Fetch Users
       var usersData = await window.ElevateSupabase.fetchUsers();
-      if (Array.isArray(usersData) && usersData.length > 0) {
+      if (Array.isArray(usersData)) {
         var mappedUsers = usersData.map(function (u) {
           return {
             id: u.id,
