@@ -6560,6 +6560,49 @@ body.lang-en .cat-badge {
 
 /* Footer Styling handled above */
 
+@media (max-width: 768px) {
+  html.elevate-mobile-reduced-motion *,
+  html.elevate-mobile-reduced-motion *::before,
+  html.elevate-mobile-reduced-motion *::after,
+  body.lang-ar *,
+  body.lang-en * {
+    animation-name: none !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-property: none !important;
+  }
+  .navbar,
+  .mobile-bottom-nav,
+  .hero-bg,
+  .hero-bg-gradient,
+  .hero-bg-grid,
+  .hero-bg-animated-shapes,
+  .hero-orb,
+  .floating-shape {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .navbar {
+    background: #090d16 !important;
+  }
+  .hero-title,
+  .hero-subtitle,
+  .hero-badge,
+  .hero-search-box,
+  .hero-cta,
+  .hero-stats,
+  .category-card,
+  .fade-in,
+  .stagger-1,
+  .stagger-2,
+  .stagger-3,
+  .stagger-4 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* Glass Panels & Modals */
 .glass-panel {
   background: var(--bg-card) !important;
