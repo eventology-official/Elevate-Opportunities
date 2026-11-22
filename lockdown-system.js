@@ -25,6 +25,8 @@
     targetTimestamp: null,
     countdownMinutes: 5,
     startedAt: null,
+    scheduledCloseAt: null,
+    scheduledOpenAt: null,
     lockedBy: 'OMAR AYMAN',
     message: DEFAULT_MESSAGE
   };
@@ -33,6 +35,7 @@
   var audioMuted = false;
   var alarmInterval = null;
   var countdownInterval = null;
+  var scheduleCounterInterval = null;
 
   // -------------------------------------------------------------
   // 1. Audio Alarm Synthesizer (Web Audio API - No external files)
@@ -151,6 +154,34 @@
   // -------------------------------------------------------------
   function evaluateState() {
     var now = Date.now();
+
+    if (state.isLocked && state.scheduledOpenAt && now >= Number(state.scheduledOpenAt)) {
+      saveState({
+        isLocked: false,
+        scheduledOpenAt: null,
+        countdownActive: false,
+        targetTimestamp: null,
+        startedAt: null
+      });
+      return;
+    }
+
+    if (!state.isLocked && state.scheduledCloseAt && now >= Number(state.scheduledCloseAt)) {
+      saveState({
+        isLocked: true,
+        scheduledCloseAt: null,
+        countdownActive: false,
+        targetTimestamp: null,
+        startedAt: null
+      });
+      return;
+    }
+
+    if (!state.isLocked && state.scheduledCloseAt && now < Number(state.scheduledCloseAt)) {
+      renderScheduledCloseBanner();
+    } else {
+      removeScheduledCloseBanner();
+    }
 
     // Check if countdown expired -> turn into locked
     if (state.countdownActive && state.targetTimestamp) {
@@ -328,6 +359,72 @@
     }
   }
 
+  function renderScheduledCloseBanner() {
+    var banner = document.getElementById('elevate-scheduled-close-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'elevate-scheduled-close-banner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#7c2d12,#c2410c,#9a3412);color:#fff;padding:10px 16px;text-align:center;font-family:Cairo,sans-serif;direction:rtl;box-shadow:0 4px 24px rgba(234,88,12,.45);';
+      document.body.prepend(banner);
+    }
+    banner.innerHTML = '<strong><i class="fas fa-clock"></i> تم جدولة قفل المنصة خلال:</strong> <span id="elevate-scheduled-close-counter" style="background:#020617;color:#fdba74;padding:3px 12px;border-radius:8px;font-family:monospace;font-size:1.15rem;font-weight:900;margin-right:8px;"></span>';
+    var counter = document.getElementById('elevate-scheduled-close-counter');
+    if (counter) counter.textContent = formatCountdown(Number(state.scheduledCloseAt) - Date.now());
+  }
+
+  function removeScheduledCloseBanner() {
+    var banner = document.getElementById('elevate-scheduled-close-banner');
+    if (banner) banner.remove();
+  }
+
+  function formatDateTimeLocal(timestamp) {
+    var d = new Date(timestamp);
+    var pad = function (n) { return n < 10 ? '0' + n : String(n); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function formatCountdown(milliseconds) {
+    var seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    var days = Math.floor(seconds / 86400);
+    seconds %= 86400;
+    var hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    var minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+    var pad = function (n) { return n < 10 ? '0' + n : String(n); };
+    return (days ? days + ' يوم · ' : '') + pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+  }
+
+  function scheduleClose() {
+    var input = document.getElementById('lockdown-schedule-close');
+    if (!input || !input.value) return;
+    var timestamp = new Date(input.value).getTime();
+    if (!timestamp || timestamp <= Date.now()) {
+      if (window.App && App.showToast) App.showToast('اختر وقتًا في المستقبل لقفل المنصة.', 'error');
+      return;
+    }
+    saveState({ scheduledCloseAt: timestamp, isLocked: false });
+  }
+
+  function scheduleOpen() {
+    var input = document.getElementById('lockdown-schedule-open');
+    if (!input || !input.value) return;
+    var timestamp = new Date(input.value).getTime();
+    if (!timestamp || timestamp <= Date.now()) {
+      if (window.App && App.showToast) App.showToast('اختر وقتًا في المستقبل لفتح المنصة.', 'error');
+      return;
+    }
+    saveState({ scheduledOpenAt: timestamp });
+  }
+
+  function cancelSchedule(kind) {
+    var changes = kind === 'open'
+      ? { scheduledOpenAt: null }
+      : { scheduledCloseAt: null };
+    saveState(changes);
+  }
+
   // -------------------------------------------------------------
   // 6. Admin Bypass Bar (Shown only to Admin when platform is locked)
   // -------------------------------------------------------------
@@ -425,6 +522,12 @@
           <p style="margin: 0 auto 28px; color: #94a3b8; font-size: 1.05rem; line-height: 1.8; max-width: 480px;">
             ${state.message || DEFAULT_MESSAGE}
           </p>
+          ${state.scheduledOpenAt ? `
+            <div style="margin:-10px auto 22px;padding:12px;border-radius:12px;border:1px solid rgba(16,185,129,.35);background:rgba(16,185,129,.08);color:#34d399;">
+              <div style="font-size:.86rem;margin-bottom:6px;">الفتح التلقائي خلال</div>
+              <div id="elevate-scheduled-open-counter" style="font-family:monospace;font-size:1.35rem;font-weight:900;">${formatCountdown(Number(state.scheduledOpenAt)-Date.now())}</div>
+            </div>
+          ` : ''}
 
           <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
             <a href="login.html" 
@@ -545,6 +648,32 @@
                 <i class="fas fa-lock-open"></i> فتح المنصة الآن للجميع
               </button>
             ` : ''}
+          </div>
+        </div>
+
+        <!-- Scheduled Open and Close -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;">
+          <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(239,68,68,.25);border-radius:18px;padding:22px;">
+            <h4 style="margin:0 0 8px;color:#fff;"><i class="fas fa-lock" style="color:#ef4444;margin-left:8px;"></i>جدولة قفل المنصة</h4>
+            <p style="margin:0 0 12px;color:#94a3b8;font-size:.86rem;">سيتم قفل المنصة تلقائياً عند وصول الموعد المحدد.</p>
+            <input id="lockdown-schedule-close" type="datetime-local" value="${state.scheduledCloseAt ? formatDateTimeLocal(Number(state.scheduledCloseAt)) : ''}"
+              style="width:100%;box-sizing:border-box;background:#020617;border:1px solid rgba(239,68,68,.35);border-radius:10px;color:#fff;padding:11px;font-family:inherit;">
+            ${state.scheduledCloseAt ? `<div id="lockdown-close-counter" style="margin-top:10px;color:#fbbf24;font-family:monospace;font-size:1.15rem;font-weight:900;">${formatCountdown(Number(state.scheduledCloseAt)-Date.now())}</div>` : ''}
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button onclick="window.ElevateLockdown.scheduleClose()" style="flex:1;background:#dc2626;border:none;border-radius:9px;color:#fff;padding:10px;font-family:inherit;font-weight:800;">تأكيد الجدولة</button>
+              ${state.scheduledCloseAt ? `<button onclick="window.ElevateLockdown.cancelSchedule('close')" style="background:#475569;border:none;border-radius:9px;color:#fff;padding:10px;font-family:inherit;font-weight:700;">إلغاء</button>` : ''}
+            </div>
+          </div>
+          <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(16,185,129,.25);border-radius:18px;border-radius:18px;padding:22px;">
+            <h4 style="margin:0 0 8px;color:#fff;"><i class="fas fa-lock-open" style="color:#10b981;margin-left:8px;"></i>جدولة فتح المنصة</h4>
+            <p style="margin:0 0 12px;color:#94a3b8;font-size:.86rem;">تفتح المنصة تلقائياً عند الوقت المحدد للجميع.</p>
+            <input id="lockdown-schedule-open" type="datetime-local" value="${state.scheduledOpenAt ? formatDateTimeLocal(Number(state.scheduledOpenAt)) : ''}"
+              style="width:100%;box-sizing:border-box;background:#020617;border:1px solid rgba(16,185,129,.35);border-radius:10px;color:#fff;padding:11px;font-family:inherit;">
+            ${state.scheduledOpenAt ? `<div id="lockdown-open-counter" style="margin-top:10px;color:#34d399;font-family:monospace;font-size:1.15rem;font-weight:900;">${formatCountdown(Number(state.scheduledOpenAt)-Date.now())}</div>` : ''}
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button onclick="window.ElevateLockdown.scheduleOpen()" style="flex:1;background:#059669;border:none;border-radius:9px;color:#fff;padding:10px;font-family:inherit;font-weight:800;">تأكيد الجدولة</button>
+              ${state.scheduledOpenAt ? `<button onclick="window.ElevateLockdown.cancelSchedule('open')" style="background:#475569;border:none;border-radius:9px;color:#fff;padding:10px;font-family:inherit;font-weight:700;">إلغاء</button>` : ''}
+            </div>
           </div>
         </div>
 
@@ -717,6 +846,25 @@
     }
   }
 
+  function updateScheduleCounters() {
+    var closeCounter = document.getElementById('lockdown-close-counter');
+    var openCounter = document.getElementById('lockdown-open-counter');
+    var publicCloseCounter = document.getElementById('elevate-scheduled-close-counter');
+    var publicOpenCounter = document.getElementById('elevate-scheduled-open-counter');
+    if (closeCounter && state.scheduledCloseAt) {
+      closeCounter.textContent = formatCountdown(Number(state.scheduledCloseAt) - Date.now());
+    }
+    if (openCounter && state.scheduledOpenAt) {
+      openCounter.textContent = formatCountdown(Number(state.scheduledOpenAt) - Date.now());
+    }
+    if (publicCloseCounter && state.scheduledCloseAt) {
+      publicCloseCounter.textContent = formatCountdown(Number(state.scheduledCloseAt) - Date.now());
+    }
+    if (publicOpenCounter && state.scheduledOpenAt) {
+      publicOpenCounter.textContent = formatCountdown(Number(state.scheduledOpenAt) - Date.now());
+    }
+  }
+
   // -------------------------------------------------------------
   // 11. Public API
   // -------------------------------------------------------------
@@ -727,6 +875,9 @@
     unlockPlatform: unlockPlatform,
     updateMessage: updateMessage,
     toggleMute: toggleMute,
+    scheduleClose: scheduleClose,
+    scheduleOpen: scheduleOpen,
+    cancelSchedule: cancelSchedule,
     renderAdminSectionUI: renderAdminSectionUI,
     evaluateState: evaluateState,
     syncStateFromCloud: syncStateFromCloud
@@ -746,5 +897,6 @@
 
   // Poll cloud state periodically (every 10s)
   setInterval(syncStateFromCloud, 10000);
+  scheduleCounterInterval = setInterval(updateScheduleCounters, 1000);
 
 })(window, document);
