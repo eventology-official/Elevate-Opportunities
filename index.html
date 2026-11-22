@@ -48,8 +48,95 @@
     <link rel="stylesheet" href="admin-visibility-control.css" />
     <link rel="stylesheet" href="community.css" />
     <link rel="stylesheet" href="courses.css" />
+    
+    <!-- Fallback Styles - يضمن ظهور الموقع حتى لو ملفات CSS متحملتش -->
+    <style>
+      /* Critical CSS للتأكد من ظهور الموقع بشكل صحيح */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      body {
+        font-family: 'Cairo', 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #090d16;
+        color: #f1f5f9;
+        line-height: 1.6;
+        direction: rtl;
+        min-height: 100vh;
+      }
+      
+      /* Loading indicator */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #090d16;
+        z-index: 9999;
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+      }
+      
+      body.loaded::before {
+        opacity: 0;
+      }
+      
+      /* إخفاء المحتوى حتى يتم التحميل */
+      .page-wrapper {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+      
+      body.loaded .page-wrapper {
+        opacity: 1;
+      }
+    </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      // ضبط اللغة العربية كافتراضية
+      (function() {
+        // تعيين اللغة العربية في localStorage
+        if (!localStorage.getItem('ns_lang')) {
+          localStorage.setItem('ns_lang', 'ar');
+        }
+        
+        // إضافة class للـ body عند التحميل
+        window.addEventListener('load', function() {
+          document.body.classList.add('lang-ar', 'loaded');
+          document.documentElement.lang = 'ar';
+          document.documentElement.dir = 'rtl';
+          
+          // التحقق من تحميل CSS
+          setTimeout(function() {
+            var bodyBg = window.getComputedStyle(document.body).backgroundColor;
+            var isDark = bodyBg.includes('9, 13, 22') || bodyBg === 'rgb(9, 13, 22)';
+            
+            if (!isDark) {
+              console.warn('⚠️ CSS may not be loaded. Forcing dark theme...');
+              document.body.style.background = '#090d16';
+              document.body.style.color = '#f1f5f9';
+            } else {
+              console.log('✅ CSS loaded successfully!');
+            }
+          }, 300);
+        });
+        
+        // إضافة loaded class مبكراً إذا DOM جاهز
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+          document.body.classList.add('loaded');
+        }
+      })();
+    </script>
     <script src="supabase-client.js"></script>
     <script src="lockdown-system.js"></script>
     <script src="elevate-security.js"></script>
@@ -84,16 +171,16 @@
                 <span
                   data-en="🚀 +50 New Opportunities This Week"
                   data-ar="🚀 +50 فرصة جديدة هذا الأسبوع"
-                  >🚀 +50 New Opportunities This Week</span
+                  >🚀 +50 فرصة جديدة هذا الأسبوع</span
                 >
               </div>
 
               <h1 class="hero-title fade-in stagger-1">
-                <span data-en="Unlock Your" data-ar="افتح الطريق">Unlock Your</span><br />
+                <span data-en="Unlock Your" data-ar="افتح الطريق">افتح الطريق</span><br />
                 <span class="text-gradient" data-en="Dream Future" data-ar="لمستقبلك"
-                  >Dream Future</span
+                  >لمستقبلك</span
                 ><br />
-                <span data-en="Today" data-ar="اليوم">Today</span>
+                <span data-en="Today" data-ar="اليوم">اليوم</span>
               </h1>
 
               <p
@@ -101,8 +188,7 @@
                 data-en="Join thousands discovering life-changing opportunities. Scholarships, competitions, jobs & volunteering programs - all in one place."
                 data-ar="انضم لآلاف المستفيدين واكتشف فرص تغير حياتك. منح دراسية، مسابقات، وظائف وبرامج تطوع - كل شيء في مكان واحد."
               >
-                Join thousands discovering life-changing opportunities. Scholarships, competitions,
-                jobs & volunteering programs - all in one place.
+                انضم لآلاف المستفيدين واكتشف فرص تغير حياتك. منح دراسية، مسابقات، وظائف وبرامج تطوع - كل شيء في مكان واحد.
               </p>
 
               <div class="hero-search-box fade-in stagger-3">
@@ -157,13 +243,13 @@
                 <div class="hero-stat-item">
                   <div class="hero-stat-number" id="stat-opps">يتم الحساب..</div>
                   <div class="hero-stat-label" data-en="Active Opportunities" data-ar="فرصة نشطة">
-                    Active Opportunities
+                    فرصة نشطة
                   </div>
                 </div>
                 <div class="hero-stat-item">
                   <div class="hero-stat-number" id="stat-users">يتم الحساب..</div>
                   <div class="hero-stat-label" data-en="Registered Members" data-ar="عدد الأعضاء">
-                    Registered Members
+                    عدد الأعضاء
                   </div>
                 </div>
               </div>

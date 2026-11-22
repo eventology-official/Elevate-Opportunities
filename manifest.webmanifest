@@ -1,0 +1,29 @@
+{
+  "name": "Elevate - منصة الفرص",
+  "short_name": "Elevate",
+  "description": "منصتك الشاملة لاكتشاف المسابقات والمنح الدراسية وفرص التطوع والوظائف",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "images/Elevate.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": []
+}
