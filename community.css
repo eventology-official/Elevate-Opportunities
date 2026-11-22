@@ -1328,6 +1328,11 @@
 }
 
 @media (max-width: 768px) {
+  body:has(#community-view) .ns-footer-enhanced,
+  body:has(#community-view) .mobile-bottom-nav,
+  body:has(#community-view) #welcome-card {
+    display: none !important;
+  }
   #community-view {
     height: calc(100dvh - 58px - 64px);
     min-height: 0 !important;

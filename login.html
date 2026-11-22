@@ -552,7 +552,18 @@
 
     function saveSessionAndRedirect(user) {
       try {
-        localStorage.setItem("ns_user", JSON.stringify(user));
+        var safeSession = {
+          id: user.id,
+          username: user.username,
+          email: user.email || "",
+          phone: user.phone || "",
+          fullName: user.fullName || user.full_name || user.username,
+          isAdmin: Boolean(user.isAdmin || user.is_admin),
+          isTeacher: Boolean(user.isTeacher || user.is_teacher),
+          isActive: user.isActive !== false && user.is_active !== false
+        };
+        localStorage.setItem("ns_user", JSON.stringify(safeSession));
+        localStorage.setItem("luxen_current_user", JSON.stringify(safeSession));
         if (user.adminToken) {
           localStorage.setItem("ns_admin_token", user.adminToken);
           localStorage.setItem("ns_backup_token", user.adminToken);
