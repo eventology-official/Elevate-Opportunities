@@ -1,0 +1,501 @@
+/* ==========================================
+   نظام التحكم في ظهور العناصر - Admin Visibility Control
+   ========================================== */
+
+/* ==========================================
+   أزرار التحكم (للمدير فقط)
+   ========================================== */
+.admin-visibility-controls {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 9999 !important; /* ✅ أعلى من أي شيء */
+  background: transparent; /* ✅ بدون خلفية */
+  backdrop-filter: none;
+  border: none; /* ✅ بدون بوردر */
+  border-radius: 0;
+  padding: 0; /* ✅ بدون padding */
+  box-shadow: none; /* ✅ بدون ظل */
+  display: flex;
+  gap: 6px;
+  opacity: 0.7;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto !important; /* ✅ دائماً تفاعلية */
+}
+
+/* إظهار الأزرار بوضوح عند hover */
+.admin-visibility-controls:hover,
+[data-element-id]:hover > .admin-visibility-controls {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+/* ✅ ضمان أن الأزرار تعمل حتى لو العنصر "قريباً" */
+[data-avc-state="coming"] > .admin-visibility-controls,
+[data-avc-state="coming"] .admin-visibility-controls {
+  pointer-events: auto !important;
+  opacity: 0.85 !important;
+  z-index: 9999 !important;
+}
+
+.avc-buttons {
+  display: flex;
+  gap: 8px; /* ✅ مسافة أكبر بين الأزرار */
+  align-items: center;
+}
+
+/* الأزرار */
+.avc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 14px; /* ✅ حجم أكبر شوية */
+  border: 2px solid rgba(255, 255, 255, 0.2); /* ✅ بوردر أوضح */
+  border-radius: 10px; /* ✅ أكثر استدارة */
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(30, 41, 59, 0.85)); /* ✅ خلفية أقوى */
+  color: #94a3b8;
+  font-size: 0.85rem; /* ✅ خط أكبر */
+  font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* ✅ ظل دائم */
+}
+
+.avc-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.avc-btn:hover::before {
+  opacity: 1;
+}
+
+.avc-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.avc-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.avc-btn i {
+  font-size: 1rem;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.avc-btn span {
+  display: inline-block;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* زر إظهار */
+.avc-btn-visible {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.avc-btn-visible:hover {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-color: #10b981;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.avc-btn-visible.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(16, 185, 129, 0.3);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 4px 12px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3), 0 6px 16px rgba(16, 185, 129, 0.5); }
+}
+
+/* زر قريباً */
+.avc-btn-coming {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.avc-btn-coming:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: #f59e0b;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+
+.avc-btn-coming.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 4px 12px rgba(245, 158, 11, 0.3);
+  animation: pulse-orange 2s ease-in-out infinite;
+}
+
+@keyframes pulse-orange {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 4px 12px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3), 0 6px 16px rgba(245, 158, 11, 0.5); }
+}
+
+/* زر إخفاء */
+.avc-btn-hidden {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.avc-btn-hidden:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: #ef4444;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+.avc-btn-hidden.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(239, 68, 68, 0.3);
+  animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 4px 12px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3), 0 6px 16px rgba(239, 68, 68, 0.5); }
+}
+
+/* الزر النشط */
+.avc-btn.active {
+  font-weight: 800;
+}
+
+/* ==========================================
+   Badge "قريباً"
+   ========================================== */
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5), 0 0 0 2px rgba(245, 158, 11, 0.2);
+  margin: 12px 0;
+  position: relative;
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse-badge 2.5s ease-in-out infinite;
+}
+
+.coming-soon-badge::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 999px;
+  opacity: 0.3;
+  filter: blur(8px);
+  z-index: -1;
+  animation: glow-badge 2.5s ease-in-out infinite;
+}
+
+.coming-soon-badge i {
+  font-size: 1rem;
+  animation: rotate-clock 3s linear infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5), 0 0 0 2px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.7), 0 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+}
+
+@keyframes glow-badge {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes rotate-clock {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================
+   حالات العناصر
+   ========================================== */
+
+/* عنصر ظاهر */
+[data-avc-state="visible"] {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* عنصر قريباً */
+[data-avc-state="coming"] {
+  position: relative;
+}
+
+[data-avc-state="coming"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(245, 158, 11, 0.05);
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* عنصر مخفي */
+[data-avc-state="hidden"] {
+  background: rgba(239, 68, 68, 0.05) !important; /* ✅ خلفية حمراء خفيفة */
+  border: 2px dashed rgba(239, 68, 68, 0.3) !important; /* ✅ بوردر متقطع */
+  min-height: 60px !important; /* ✅ ارتفاع أدنى عشان الأزرار تظهر */
+  opacity: 0.4 !important;
+}
+
+/* ==========================================
+   تحسينات للشاشات الصغيرة
+   ========================================== */
+@media (max-width: 768px) {
+  .admin-visibility-controls {
+    top: 6px;
+    left: 6px;
+    gap: 5px;
+  }
+
+  .avc-btn {
+    padding: 8px 11px;
+    font-size: 0.8rem;
+    gap: 4px;
+  }
+
+  .avc-btn span {
+    display: none;
+  }
+
+  .avc-btn i {
+    font-size: 1.1rem;
+  }
+
+  .coming-soon-badge {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    gap: 6px;
+  }
+
+  [data-element-id]:hover {
+    outline-offset: 2px;
+  }
+}
+
+/* للشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+  .admin-visibility-controls {
+    top: 4px;
+    left: 4px;
+    gap: 4px;
+  }
+
+  .avc-btn {
+    padding: 7px 9px;
+  }
+
+  .avc-btn i {
+    font-size: 1rem;
+  }
+
+  .coming-soon-badge {
+    font-size: 0.75rem;
+    padding: 5px 12px;
+  }
+}
+
+/* ==========================================
+   تحسينات للبطاقات
+   ========================================== */
+.opportunity-card,
+.card,
+.partner-card,
+.course-card,
+.feature-box,
+.community-message,
+.comm-msg,
+.message-item,
+.post-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.opportunity-card .admin-visibility-controls,
+.card .admin-visibility-controls,
+.partner-card .admin-visibility-controls,
+.course-card .admin-visibility-controls {
+  top: 12px;
+  left: 12px;
+}
+
+/* تحسينات خاصة لرسائل المجتمع */
+.community-message .admin-visibility-controls,
+.comm-msg .admin-visibility-controls,
+.message-item .admin-visibility-controls {
+  top: 8px;
+  left: 8px;
+}
+
+/* تأثير hover محسّن للبطاقات */
+.opportunity-card:hover,
+.card:hover,
+.partner-card:hover,
+.course-card:hover {
+  transform: translateY(-2px);
+}
+
+/* تأثير للعناصر المخفية عند hover (للمدير فقط) */
+[data-avc-state="hidden"]:hover {
+  opacity: 0.6 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  transform: scale(1.01);
+}
+
+/* ==========================================
+   تحسينات للأقسام
+   ========================================== */
+section[id] {
+  position: relative;
+}
+
+section[id] > .admin-visibility-controls {
+  top: 20px;
+  left: 20px;
+}
+
+/* ==========================================
+   إخفاء الأزرار عند الطباعة
+   ========================================== */
+@media print {
+  .admin-visibility-controls {
+    display: none !important;
+  }
+  
+  .coming-soon-badge {
+    display: none !important;
+  }
+}
+
+/* ==========================================
+   مؤشر عند تمرير الماوس على عنصر له أزرار تحكم
+   ========================================== */
+[data-element-id] {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+[data-element-id]:hover {
+  outline: 2px solid rgba(56, 189, 248, 0.4);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+}
+
+[data-element-id]:hover::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.05), transparent);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* إلغاء المؤشر للعناصر المخفية */
+[data-avc-state="hidden"]:hover {
+  outline: 2px dashed rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.05);
+}
+
+/* مؤشر خاص للعناصر "قريباً" */
+[data-avc-state="coming"]:hover {
+  outline: 2px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+}
+
+
+/* ==========================================
+   ✅ إصلاح مشكلة عدم الاستجابة بعد "قريباً"
+   ========================================== */
+
+/* الأزرار نفسها دائماً تعمل */
+.avc-btn,
+.avc-btn * {
+  pointer-events: auto !important;
+}
+
+/* الأزرار داخل عنصر "قريباً" تعمل */
+[data-avc-state="coming"] .admin-visibility-controls,
+[data-avc-state="coming"] .admin-visibility-controls *,
+[data-avc-state="coming"] > .admin-visibility-controls,
+[data-avc-state="coming"] > .admin-visibility-controls * {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* العناصر المخفية - الأزرار تعمل للمدير */
+[data-avc-state="hidden"] .admin-visibility-controls,
+[data-avc-state="hidden"] > .admin-visibility-controls {
+  display: flex !important;
+  pointer-events: auto !important;
+  opacity: 1 !important; /* ✅ الأزرار واضحة 100% */
+  position: relative !important;
+  z-index: 10000 !important;
+}
+
+/* Badge "قريباً" لا يعيق الأزرار */
+.coming-soon-badge {
+  pointer-events: none !important;
+}
+
+
+/* ==========================================
+   للمستخدمين العاديين: إخفاء المحتوى المخفي تماماً
+   ========================================== */
+body:not(.admin-logged-in) [data-avc-state="hidden"] {
+  display: none !important;
+}
+
+/* للمدير: العناصر المخفية تكون شبه شفافة مع الأزرار */
+body.admin-logged-in [data-avc-state="hidden"] {
+  display: block !important;
+}
+
+/* إضافة class للـ body عند تسجيل دخول المدير */
