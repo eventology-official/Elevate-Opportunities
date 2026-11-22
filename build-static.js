@@ -10,7 +10,7 @@ fs.mkdirSync(output, { recursive: true });
 const rootFiles = fs.readdirSync(root, { withFileTypes: true });
 for (const entry of rootFiles) {
   if (!entry.isFile()) continue;
-  if (entry.name === "server.js" || entry.name === "build-static.js") continue;
+  if (entry.name === "server.js" || entry.name === "standalone-server.js" || entry.name === "build-static.js") continue;
   if (
     entry.name.endsWith(".html") ||
     entry.name.endsWith(".css") ||
