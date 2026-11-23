@@ -823,7 +823,30 @@
     }
 
     async function handleGoogleSignIn() {
-      showAlert("تسجيل Google الرسمي يحتاج تفعيل OAuth من لوحة Google Cloud، واختياره مؤقتًا غير متاح.", "info");
+      try {
+        showAlert("جاري الاتصال بـ Google...", "info");
+        
+        // Google OAuth using Supabase
+        const { data, error } = await window.supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/index.html',
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'select_account' // هنا السحر! يخلي Google يظهر كل الحسابات
+            }
+          }
+        });
+        
+        if (error) {
+          console.error('Google OAuth error:', error);
+          showAlert("حدث خطأ في الاتصال بـ Google: " + error.message, "error");
+        }
+        
+      } catch (e) {
+        console.error('handleGoogleSignIn error:', e);
+        showAlert("لم يتم تفعيل Google Sign-In بعد. يرجى استخدام التسجيل العادي.", "error");
+      }
     }
 
     async function handleForgot(event) {

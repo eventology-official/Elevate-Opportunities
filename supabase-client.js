@@ -252,3 +252,116 @@
 
   window.ElevateSupabase = ElevateSupabase;
 })(window);
+
+  // =====================================================================
+  // Google OAuth Integration
+  // =====================================================================
+  
+  // Initialize Supabase Client for OAuth
+  if (typeof window.supabase === 'undefined' && typeof window.supabase_createClient !== 'undefined') {
+    window.supabase = window.supabase_createClient(
+      SUPABASE_CONFIG.url,
+      SUPABASE_CONFIG.anonKey
+    );
+  } else if (typeof window.supabase === 'undefined' && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+    window.supabase = supabase.createClient(
+      SUPABASE_CONFIG.url,
+      SUPABASE_CONFIG.anonKey
+    );
+  }
+  
+  // Handle OAuth callback
+  async function handleOAuthCallback() {
+    try {
+      if (!window.supabase) return;
+      
+      const { data, error } = await window.supabase.auth.getSession();
+      
+      if (error) {
+        console.error('OAuth session error:', error);
+        return;
+      }
+      
+      if (data && data.session && data.session.user) {
+        const googleUser = data.session.user;
+        console.log('Google user:', googleUser);
+        
+        // Create or update user in our database
+        const newUser = {
+          username: googleUser.email.split('@')[0] + '_google',
+          email: googleUser.email,
+          full_name: googleUser.user_metadata.full_name || googleUser.user_metadata.name || googleUser.email.split('@')[0],
+          phone: googleUser.phone || '',
+          avatar: googleUser.user_metadata.avatar_url || googleUser.user_metadata.picture || '',
+          is_admin: false,
+          is_teacher: false,
+          is_active: true,
+          auth_provider: 'google',
+          google_id: googleUser.id,
+          join_date: new Date().toISOString().split('T')[0],
+          join_timestamp: Date.now()
+        };
+        
+        // Check if user exists
+        let existingUser = await ElevateSupabase.findUserByEmail(googleUser.email);
+        
+        if (!existingUser) {
+          // Create new user
+          await ElevateSupabase.createUser(newUser);
+          existingUser = newUser;
+        }
+        
+        // Save session
+        const safeUser = {
+          id: existingUser.id || googleUser.id,
+          username: existingUser.username,
+          email: existingUser.email,
+          phone: existingUser.phone || '',
+          fullName: existingUser.full_name || existingUser.fullName,
+          full_name: existingUser.full_name || existingUser.fullName,
+          isAdmin: false,
+          isTeacher: false,
+          isActive: true,
+          avatar: existingUser.avatar,
+          authProvider: 'google'
+        };
+        
+        localStorage.setItem("ns_user", JSON.stringify(safeUser));
+        localStorage.setItem("luxen_current_user", JSON.stringify(safeUser));
+        
+        // Redirect to home
+        window.location.href = "index.html";
+      }
+      
+    } catch (e) {
+      console.error('OAuth callback error:', e);
+    }
+  }
+  
+  // Check for OAuth callback on page load
+  if (window.location.pathname.includes('login') || window.location.pathname.endsWith('/')) {
+    if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+      setTimeout(handleOAuthCallback, 500);
+    }
+  }
+  
+  // Add findUserByEmail helper
+  ElevateSupabase.findUserByEmail = async function(email) {
+    if (!email) return null;
+    
+    try {
+      var endpoint = 'users?email=eq.' + encodeURIComponent(email) + '&limit=1';
+      var response = await restRequest(endpoint, { method: 'GET' });
+      
+      if (response && response.length > 0) {
+        return response[0];
+      }
+      return null;
+      
+    } catch (e) {
+      console.error('Find user by email error:', e);
+      return null;
+    }
+  };
+
+})(window);
