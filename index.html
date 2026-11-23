@@ -1693,6 +1693,14 @@
               <!-- ================= ADMIN DASHBOARD TAB ================= -->
               <div id="prof-admin-tab" class="prof-tab-content">
                 <!-- Dashboard Main Navigation Tabs (شريط التنقل الرئيسي للوحة التحكم) -->
+                <div style="position: relative; margin-bottom: 10px;">
+                  <div class="admin-scroll-hint" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 15px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; margin-bottom: 10px;">
+                    <span style="color: #f59e0b; font-size: 0.85rem; font-weight: 600;">
+                      <i class="fas fa-info-circle"></i> مرر شريط التنقل يميناً ويساراً لعرض جميع الأقسام
+                    </span>
+                    <button onclick="this.closest('.admin-scroll-hint').remove()" style="background: transparent; border: none; color: #f59e0b; cursor: pointer; padding: 4px 8px; font-size: 1.2rem;">×</button>
+                  </div>
+                </div>
                 <div class="admin-nav admin-nav-pro" id="admin-nav">
                   <button
                     class="admin-nav-btn active"

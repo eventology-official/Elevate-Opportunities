@@ -4497,6 +4497,12 @@ const AdminSettings = {
       Admin.switchSection = function(secId) {
         originalSwitchSection(secId);
         
+        // Auto-scroll to button when switching sections
+        var activeBtn = document.querySelector('.admin-nav-btn[data-sec="' + secId + '"]');
+        if (activeBtn) {
+          activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+        
         // تهيئة صفحة الإعدادات
         if (secId === 'adm-sec-settings' && typeof AdminSettings !== 'undefined') {
           setTimeout(function() {
