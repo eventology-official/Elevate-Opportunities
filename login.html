@@ -405,10 +405,30 @@
         </form>
 
         <div class="divider">
-          <span>أو المتابعة السريعة</span>
+          <span>أو التسجيل بحسابك</span>
         </div>
 
-        <button type="button" class="social-btn" onclick="showQuickEmailLogin()">
+        <!-- Google Sign-In Button -->
+        <div id="g_id_onload"
+             data-client_id="480045819732-d1ninhe8glt645e836k2dh5j1l7msjld.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleGoogleSignIn"
+             data-auto_prompt="false">
+        </div>
+        
+        <div class="g_id_signin" 
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="filled_blue"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left"
+             data-width="100%"
+             style="width: 100%; margin-bottom: 10px;">
+        </div>
+
+        <button type="button" class="social-btn" onclick="showQuickEmailLogin()" style="margin-top: 10px;">
           <i class="fas fa-envelope" style="color: #3b82f6; font-size: 1.1rem;"></i>
           <span>دخول سريع بالبريد الإلكتروني</span>
         </button>
@@ -480,10 +500,22 @@
         </form>
 
         <div class="divider">
-          <span>أو التسجيل السريع</span>
+          <span>أو التسجيل بحسابك</span>
         </div>
 
-        <button type="button" class="social-btn" onclick="showQuickEmailLogin()">
+        <!-- Google Sign-In Button (Register) -->
+        <div class="g_id_signin" 
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="filled_blue"
+             data-text="signup_with"
+             data-size="large"
+             data-logo_alignment="left"
+             data-width="100%"
+             style="width: 100%; margin-bottom: 10px;">
+        </div>
+
+        <button type="button" class="social-btn" onclick="showQuickEmailLogin()" style="margin-top: 10px;">
           <i class="fas fa-envelope" style="color: #3b82f6; font-size: 1.1rem;"></i>
           <span>تسجيل سريع بالبريد الإلكتروني</span>
         </button>
@@ -887,9 +919,103 @@
       }
     }
     
-    async function handleGoogleSignIn() {
-      showAlert("⚠️ Google Sign-In يحتاج إعداد إضافي من المطور. استخدم التسجيل بالبريد الإلكتروني!", "info");
+    // ✅ Google Sign-In Handler - يعمل account picker حقيقي
+    async function handleGoogleSignIn(response) {
+      try {
+        if (!response || !response.credential) {
+          showAlert("❌ فشل الحصول على بيانات Google", "error");
+          return;
+        }
+        
+        showAlert("🔐 جاري التحقق من حساب Google الخاص بك...", "info");
+        
+        // فك تشفير JWT token
+        const credential = response.credential;
+        const payload = JSON.parse(atob(credential.split('.')[1]));
+        
+        console.log('Google User:', payload);
+        
+        // بيانات المستخدم من Google
+        const googleEmail = payload.email;
+        const googleName = payload.name || googleEmail.split('@')[0];
+        const googlePicture = payload.picture || '';
+        const googleId = payload.sub;
+        
+        // البحث عن المستخدم في قاعدة البيانات
+        let user = null;
+        if (window.ElevateSupabase && typeof ElevateSupabase.findUserByEmail === 'function') {
+          user = await ElevateSupabase.findUserByEmail(googleEmail);
+        }
+        
+        // إذا لم يكن موجود، أنشئ حساب جديد
+        if (!user) {
+          const username = googleEmail.split('@')[0] + '_google_' + Math.floor(Math.random() * 1000);
+          const newUser = {
+            id: 'usr_google_' + googleId,
+            username: username,
+            email: googleEmail,
+            full_name: googleName,
+            phone: '',
+            password_hash: 'google_oauth_' + googleId,
+            is_admin: false,
+            is_teacher: false,
+            is_active: true,
+            provider: 'google',
+            google_id: googleId,
+            avatar: googlePicture,
+            join_date: new Date().toISOString().split('T')[0],
+            join_timestamp: Date.now()
+          };
+          
+          if (window.ElevateSupabase && typeof ElevateSupabase.saveUser === 'function') {
+            await ElevateSupabase.saveUser(newUser);
+          }
+          user = newUser;
+          
+          showAlert("✅ تم إنشاء حسابك بنجاح عبر Google!", "success");
+        } else {
+          // تحديث الصورة والاسم من Google
+          if (googlePicture && user.avatar !== googlePicture) {
+            user.avatar = googlePicture;
+          }
+          if (googleName && user.full_name !== googleName) {
+            user.full_name = googleName;
+          }
+          
+          showAlert("✅ مرحباً بعودتك " + googleName + "!", "success");
+        }
+        
+        // حفظ الجلسة
+        const safeUser = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          phone: user.phone || '',
+          fullName: user.full_name || googleName,
+          isAdmin: Boolean(user.is_admin),
+          isTeacher: Boolean(user.is_teacher),
+          isActive: true,
+          avatar: user.avatar || googlePicture,
+          authProvider: 'google',
+          googleId: googleId
+        };
+        
+        localStorage.setItem("ns_user", JSON.stringify(safeUser));
+        localStorage.setItem("luxen_current_user", JSON.stringify(safeUser));
+        
+        // توجيه للصفحة الرئيسية
+        setTimeout(function() {
+          window.location.href = "index.html";
+        }, 1000);
+        
+      } catch(e) {
+        console.error('Google Sign-In Error:', e);
+        showAlert("❌ حدث خطأ أثناء تسجيل الدخول عبر Google: " + e.message, "error");
+      }
     }
+    
+    // تعريف الدالة بشكل عالمي
+    window.handleGoogleSignIn = handleGoogleSignIn;
 
     async function handleForgot(event) {
       event.preventDefault();
