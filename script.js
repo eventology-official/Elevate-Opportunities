@@ -430,14 +430,6 @@ const Admin = {
     let bContests = document.getElementById("admin-nav-contests-badge");
     if (bContests) bContests.textContent = contestApps.length;
 
-    // Update opportunities intake badge
-    try {
-      const suggestedOpps = JSON.parse(localStorage.getItem('luxen_suggested_opportunities') || '[]');
-      const pendingOpps = suggestedOpps.filter(function(o) { return o.status === 'pending'; });
-      let bIntake = document.getElementById("admin-nav-intake-badge");
-      if (bIntake) bIntake.textContent = pendingOpps.length;
-    } catch(e) {}
-
     // Section header count badges
     let bDatedSub = document.getElementById("admin-dated-sub-badge");
     if (bDatedSub) bDatedSub.textContent = dated.length;
@@ -3292,13 +3284,6 @@ const App = {
       if (adminBtn) {
         adminBtn.style.display = "block";
         this.switchProfTab("prof-admin-tab");
-        
-        // فتح قسم تلقي الفرص مباشرة
-        setTimeout(function() {
-          if (typeof Admin !== 'undefined' && Admin.switchSection) {
-            Admin.switchSection('adm-sec-intake');
-          }
-        }, 500);
       }
 
       // تصميم فخم ومختلف كلياً لهيدر الأدمن
@@ -4514,17 +4499,6 @@ const AdminSettings = {
         if (secId === 'adm-sec-settings' && typeof AdminSettings !== 'undefined') {
           setTimeout(function() {
             AdminSettings.init();
-          }, 100);
-        }
-        
-        // تهيئة صفحة تلقي الفرص
-        if (secId === 'adm-sec-intake' && typeof OpportunitiesIntake !== 'undefined') {
-          setTimeout(function() {
-            OpportunitiesIntake.init();
-            // تحديث عدد الفرص في الانتظار
-            var pending = OpportunitiesIntake.getSuggestedOpportunities().filter(function(o) { return o.status === 'pending'; });
-            var badge = document.getElementById('admin-nav-intake-badge');
-            if (badge) badge.textContent = pending.length;
           }, 100);
         }
       };

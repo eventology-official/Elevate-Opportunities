@@ -175,7 +175,6 @@
     </script>
     <script src="supabase-client.js"></script>
     <script src="lockdown-system.js?v=6dbfc4d"></script>
-    <script src="opportunities-intake.js"></script>
     <script src="elevate-security.js"></script>
     <script src="db-sync.js"></script>
     <script src="pwa-install.js"></script>
@@ -1692,15 +1691,6 @@
 
               <!-- ================= ADMIN DASHBOARD TAB ================= -->
               <div id="prof-admin-tab" class="prof-tab-content">
-                
-                <!-- زرار تجريبي لفتح قسم تلقي الفرص مباشرة -->
-                <div style="padding: 15px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; margin-bottom: 20px; text-align: center;">
-                  <button onclick="Admin.switchSection('adm-sec-intake')" style="background: white; color: #10b981; border: none; padding: 12px 30px; border-radius: 8px; font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                    <i class="fas fa-inbox"></i> افتح قسم تلقي الفرص مباشرة 
-                  </button>
-                  <p style="color: white; margin: 10px 0 0; font-size: 0.85rem;">اضغط هنا لفتح قسم تلقي الفرص ومراجعة الفرص من السوشيال ميديا</p>
-                </div>
-                
                 <!-- Dashboard Main Navigation Tabs (شريط التنقل الرئيسي للوحة التحكم) -->
                 <div class="admin-nav admin-nav-pro" id="admin-nav" style="display: grid !important; visibility: visible !important;">
                   <button
@@ -1822,19 +1812,6 @@
                   >
                     <i class="fas fa-chalkboard-teacher"></i> <span>إنشاء حسابات مدرسين</span>
                     <span class="admin-nav-badge" id="admin-nav-teachers-badge">0</span>
-                  </button>
-                  <button
-                    class="admin-nav-btn"
-                    data-sec="adm-sec-intake"
-                    onclick="Admin.switchSection('adm-sec-intake')"
-                    style="
-                      background: rgba(16, 185, 129, 0.12);
-                      border-color: rgba(16, 185, 129, 0.35);
-                      color: #10b981;
-                    "
-                  >
-                    <i class="fas fa-inbox"></i> <span>تلقي الفرص</span>
-                    <span class="admin-nav-badge" id="admin-nav-intake-badge">0</span>
                   </button>
                   <button
                     class="admin-nav-btn admin-nav-lockdown-btn"
@@ -3271,31 +3248,7 @@
                 </section>
 
                 <!-- ==========================================
-                         الصفحة 15: تلقي الفرص (Opportunities Intake)
-                    ========================================== -->
-                <section class="admin-section" id="adm-sec-intake" style="display: none;">
-                  <div class="admin-deck-full" style="margin-bottom: 24px">
-                    <div class="prof-card-header" style="margin-bottom: 16px">
-                      <div style="display: flex; align-items: center; gap: 10px">
-                        <i class="fas fa-inbox" style="color: #10b981; font-size: 1.3rem"></i>
-                        <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary)">
-                          تلقي ومراجعة الفرص من السوشيال ميديا
-                        </span>
-                      </div>
-                      <span class="admin-chip-pro" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);">مراجعة واعتماد</span>
-                    </div>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem; line-height: 1.7">
-                      يمكنك هنا مراجعة الفرص المقترحة من السوشيال ميديا التي لم تنتهي مدتها أو لم يتم تحديد مدة لها، وعرضها وتعديلها واعتمادها لنشرها على المنصة.
-                    </p>
-
-                    <div id="opportunities-intake-container">
-                      <!-- Injected by OpportunitiesIntake.renderIntakeSection() -->
-                    </div>
-                  </div>
-                </section>
-
-                <!-- ==========================================
-                         الصفحة 16: قفل وتطوير المنصة (Lockdown)
+                         الصفحة 15: قفل وتطوير المنصة (Lockdown)
                     ========================================== -->
                 <section class="admin-section" id="adm-sec-lockdown" style="display: none;">
                   <div class="admin-deck-full" style="margin-bottom: 24px">
