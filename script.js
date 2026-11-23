@@ -3292,6 +3292,13 @@ const App = {
       if (adminBtn) {
         adminBtn.style.display = "block";
         this.switchProfTab("prof-admin-tab");
+        
+        // فتح قسم تلقي الفرص مباشرة
+        setTimeout(function() {
+          if (typeof Admin !== 'undefined' && Admin.switchSection) {
+            Admin.switchSection('adm-sec-intake');
+          }
+        }, 500);
       }
 
       // تصميم فخم ومختلف كلياً لهيدر الأدمن
