@@ -501,17 +501,8 @@
     </div>
   </div>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // Initialize Supabase Client immediately
-    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-      window.supabase = supabase.createClient(
-        'https://uhjstvlhlkcewmquhrnj.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoanN0dmxobGtjZXdtcXVocm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUzNzU3MDUsImV4cCI6MjExMDk1MTcwNX0.XpTZ-mxoY89WDcQ4dYzubev65hcxFOJ67iK7ikoVNuA'
-      );
-      console.log('✅ Supabase client initialized');
-    }
-  </script>
   <script src="supabase-client.js?v=auth-cloud-1"></script>
   <script src="lockdown-system.js"></script>
   <script>
@@ -836,31 +827,22 @@
       try {
         showAlert("🚀 جاري فتح نافذة Google...", "info");
         
-        // Check if Supabase client exists
-        if (typeof window.supabase === 'undefined' || !window.supabase) {
-          showAlert("❌ يرجى الانتظار قليلاً وإعادة المحاولة...", "error");
-          console.error('Supabase client not initialized');
-          return;
-        }
+        // Direct redirect to Google OAuth
+        const clientId = '480045819732-d1ninhe8glt645e836k2dh5j1l7msjld.apps.googleusercontent.com';
+        const redirectUri = window.location.origin.includes('localhost')
+          ? 'http://localhost:5500/login.html'
+          : 'https://luxentech.github.io/Elevate-Opportunities/login.html';
         
-        // Google OAuth with account picker
-        const { data, error } = await window.supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: window.location.origin.includes('localhost') 
-              ? 'http://localhost:5500/index.html'
-              : 'https://luxentech.github.io/Elevate-Opportunities/index.html',
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'select_account'
-            }
-          }
+        const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          response_type: 'code',
+          scope: 'openid email profile',
+          access_type: 'offline',
+          prompt: 'select_account'
         });
         
-        if (error) {
-          console.error('Google OAuth error:', error);
-          showAlert("❌ خطأ: " + error.message, "error");
-        }
+        window.location.href = authUrl;
         
       } catch (e) {
         console.error('handleGoogleSignIn error:', e);
