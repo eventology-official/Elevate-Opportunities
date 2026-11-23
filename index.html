@@ -107,14 +107,18 @@
           padding-bottom: 30px !important;
         }
         
-        /* Footer */
+        /* Footer - إصلاح حاسم للظهور على الموبايل */
         footer,
         .ns-footer-enhanced,
-        .mobile-bottom-nav {
+        #footer-placeholder {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
           position: relative !important;
           bottom: auto !important;
           margin-top: 40px;
           z-index: 10;
+          padding-bottom: 100px !important; /* مساحة للقائمة السفلية */
         }
         
         /* إصلاح القائمة السفلية على الموبايل */

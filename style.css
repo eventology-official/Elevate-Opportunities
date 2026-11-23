@@ -2164,6 +2164,17 @@ body.lang-en .ns-footer-enhanced .footer-links a:hover {
   }
   .ns-footer-enhanced {
     padding-bottom: 90px;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+  }
+  
+  /* ضمان ظهور Footer placeholder على الموبايل */
+  #footer-placeholder {
+    display: block !important;
+    visibility: visible !important;
+    min-height: 50px;
   }
 
   .prof-layout-wrapper {
