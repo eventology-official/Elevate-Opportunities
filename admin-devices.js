@@ -280,11 +280,20 @@
     
     // Render devices list
     renderDevicesList: function() {
+      console.log('[AdminDevices] 🔍 renderDevicesList called');
+      
       const container = document.getElementById('admin-devices-list');
-      if (!container) return;
+      if (!container) {
+        console.error('[AdminDevices] ❌ Container not found!');
+        return;
+      }
+      
+      console.log('[AdminDevices] ✓ Container found');
       
       const devices = this.getAllDevices();
       const currentDeviceId = this.getCurrentDeviceId();
+      
+      console.log('[AdminDevices] 📱 Devices count:', devices.length);
       
       if (devices.length === 0) {
         container.innerHTML = `
@@ -294,6 +303,7 @@
             <p style="color: #64748b; font-size: 0.9rem; margin: 8px 0 0;">سيتم تسجيل الأجهزة تلقائياً عند تسجيل الدخول</p>
           </div>
         `;
+        console.log('[AdminDevices] ℹ️ No devices, showing empty state');
         return;
       }
       
@@ -473,23 +483,44 @@
 
 // Hook into Admin.switchSection to render devices when section is opened
 (function() {
-  if (window.Admin && typeof Admin.switchSection === 'function') {
-    const originalSwitchSection = Admin.switchSection;
-    
-    Admin.switchSection = function(sectionId) {
-      // Call original function
-      const result = originalSwitchSection.apply(this, arguments);
+  console.log('[AdminDevices] 🔗 Setting up integration hook...');
+  
+  // Try to hook immediately if Admin exists
+  function setupHook() {
+    if (window.Admin && typeof Admin.switchSection === 'function') {
+      const originalSwitchSection = Admin.switchSection;
       
-      // If switching to devices section, render devices list
-      if (sectionId === 'adm-sec-devices') {
-        setTimeout(function() {
-          AdminDevices.renderDevicesList();
-          updateDevicesStats();
-        }, 100);
-      }
+      Admin.switchSection = function(sectionId) {
+        console.log('[AdminDevices] 🔀 Switch to section:', sectionId);
+        
+        // Call original function
+        const result = originalSwitchSection.apply(this, arguments);
+        
+        // If switching to devices section, render devices list
+        if (sectionId === 'adm-sec-devices') {
+          console.log('[AdminDevices] 📱 Rendering devices section...');
+          setTimeout(function() {
+            AdminDevices.renderDevicesList();
+            updateDevicesStats();
+          }, 100);
+        }
+        
+        return result;
+      };
       
-      return result;
-    };
+      console.log('[AdminDevices] ✓ Hook installed successfully');
+      return true;
+    }
+    return false;
+  }
+  
+  // Try immediately
+  if (!setupHook()) {
+    // Try again after page load
+    console.log('[AdminDevices] ⏳ Admin not ready, will retry...');
+    window.addEventListener('DOMContentLoaded', function() {
+      setTimeout(setupHook, 500);
+    });
   }
 })();
 
@@ -519,10 +550,14 @@ function updateDevicesStats() {
 // Auto-register device on admin login
 if (window.addEventListener) {
   window.addEventListener('DOMContentLoaded', function() {
+    console.log('[AdminDevices] 🚀 Script loaded successfully');
+    
     // Check if user is admin and register device
     setTimeout(function() {
       try {
         const user = JSON.parse(localStorage.getItem('ns_user') || '{}');
+        console.log('[AdminDevices] 👤 Current user:', user.username, 'isAdmin:', user.isAdmin);
+        
         if (user.isAdmin || user.username === 'admin@elevate.com' || user.username === 'admin') {
           AdminDevices.registerDevice(user);
           console.log('[AdminDevices] ✓ تم تسجيل الجهاز الحالي للمدير');
@@ -533,3 +568,11 @@ if (window.addEventListener) {
     }, 1000);
   });
 }
+
+// Test render on page load (for debugging)
+console.log('[AdminDevices] 📦 Module loaded. Testing render...');
+setTimeout(function() {
+  if (document.getElementById('admin-devices-list')) {
+    console.log('[AdminDevices] ✓ Container exists on page');
+  }
+}, 2000);
