@@ -493,6 +493,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js?v=auth-cloud-1"></script>
+  <script src="admin-devices.js"></script>
   <script src="lockdown-system.js"></script>
   <script>
     function showAlert(msg, type) {
@@ -557,6 +558,16 @@
         if (user.adminToken) {
           localStorage.setItem("ns_admin_token", user.adminToken);
           localStorage.setItem("ns_backup_token", user.adminToken);
+        }
+        
+        // 🔐 تسجيل الجهاز تلقائياً إذا كان المستخدم مدير
+        if (safeSession.isAdmin && window.AdminDevices && typeof AdminDevices.registerDevice === 'function') {
+          try {
+            AdminDevices.registerDevice(safeSession);
+            console.log('[Login] ✓ تم تسجيل الجهاز للمدير');
+          } catch (e) {
+            console.error('[Login] خطأ في تسجيل الجهاز:', e);
+          }
         }
       } catch (e) {}
       showAlert("تم بنجاح! جاري تحويلك للصفحة الرئيسية...", "success");
