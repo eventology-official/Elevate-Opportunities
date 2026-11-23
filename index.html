@@ -177,6 +177,15 @@
     <script src="elevate-security.js"></script>
     <script src="db-sync.js"></script>
     <script src="pwa-install.js"></script>
+    <script>
+      // Update footer year
+      (function() {
+        var yearEl = document.getElementById('footer-year');
+        if (yearEl) {
+          yearEl.textContent = new Date().getFullYear();
+        }
+      })();
+    </script>
   </head>
   <body class="lang-ar">
     <div id="navbar-placeholder"></div>
@@ -3609,7 +3618,69 @@
       
     </main>
 
-    <div id="footer-placeholder"></div>
+    <!-- Footer Section - Static HTML -->
+    <footer class="footer ns-footer-enhanced" id="main-footer">
+        <div class="footer-container">
+            <div class="footer-col footer-col-brand">
+                <a href="index.html" class="footer-logo">
+                    <img src="images/logo.png" alt="Elevate Logo" class="footer-logo-img">
+                    <span class="footer-logo-text">Elevate Opportunities</span>
+                    <span class="footer-verified-badge"><i class="fas fa-check-circle"></i> منصة موثوقة</span>
+                </a>
+                <p class="footer-desc">
+                    بوابتك الأولى والموثوقة لاكتشاف المسابقات، المنح الدراسية، برامج التطوع، والوظائف التي تبني مستقبلك وتصنع فارقاً حقيقياً في مسيرتك.
+                </p>
+                <div class="footer-contact-highlight">
+                    <i class="fas fa-headset"></i>
+                    <div>
+                        <div class="fch-label">خدمة العملاء والدعم المباشر:</div>
+                        <a href="tel:01124310907" class="fch-phone" dir="ltr"><i class="fas fa-phone-alt"></i> 01124310907</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h3 class="footer-col-title">استكشف الفرص</h3>
+                <ul class="footer-links">
+                    <li><a href="?category=competitions"><i class="fas fa-trophy"></i> المسابقات والجوائز</a></li>
+                    <li><a href="?category=scholarships"><i class="fas fa-graduation-cap"></i> المنح الدراسية</a></li>
+                    <li><a href="?category=volunteering"><i class="fas fa-hands-helping"></i> فرص التطوع</a></li>
+                    <li><a href="?category=events"><i class="fas fa-calendar-alt"></i> الفعاليات والايفينتات</a></li>
+                    <li><a href="?category=jobs"><i class="fas fa-briefcase"></i> الوظائف والتدريب</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h3 class="footer-col-title">روابط سريعة ومساعدة</h3>
+                <ul class="footer-links">
+                    <li><a href="?category=courses"><i class="fas fa-book-open"></i> كورسات مجانية</a></li>
+                    <li><a href="?view=community"><i class="fas fa-comments"></i> مجتمع Elevate</a></li>
+                    <li><a href="?view=login"><i class="fas fa-user-circle"></i> تسجيل الدخول / حساب جديد</a></li>
+                    <li><a href="index.html#faq"><i class="fas fa-question-circle"></i> الأسئلة الشائعة</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-brand-strip">
+            <div class="footer-brand-pill">
+                <i class="fas fa-shield-alt"></i>
+                <span>منظومة تقنية مدعومة بالكامل بواسطة <strong>LUXEN TECH</strong></span>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-copy">
+                &copy; <span id="footer-year">2026</span> <strong>Elevate Opportunities</strong>. جميع الحقوق محفوظة لرواد المستقبل.
+            </div>
+            <div class="footer-bottom-links">
+                <span><i class="fas fa-lock"></i> خصوصية وأمان عالي</span>
+                <span class="f-dot">•</span>
+                <span><i class="fas fa-bolt"></i> منصة فائقة السرعة</span>
+            </div>
+        </div>
+    </footer>
+
+    <div id="footer-placeholder" style="display: none;"></div>
 
     <!-- Mobile Bottom Navigation -->
     <div class="mobile-bottom-nav">

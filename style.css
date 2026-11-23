@@ -2176,6 +2176,18 @@ body.lang-en .ns-footer-enhanced .footer-links a:hover {
     visibility: visible !important;
     min-height: 50px;
   }
+  
+  /* ضمان ظهور Footer الثابت */
+  #main-footer {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* إخفاء Footer فقط في صفحة المجتمع */
+  body:has(#community-view:not([style*="display: none"])) #main-footer {
+    display: none !important;
+  }
 
   .prof-layout-wrapper {
     padding: 0 10px;
