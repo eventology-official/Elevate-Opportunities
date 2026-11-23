@@ -76,6 +76,56 @@
       .page-wrapper {
         opacity: 1;
       }
+      
+      /* 📱 إصلاحات الموبايل - ضمان ظهور كل المحتوى */
+      @media (max-width: 768px) {
+        body {
+          overflow-x: hidden;
+          overflow-y: auto !important;
+          position: relative;
+          padding-bottom: 0;
+        }
+        
+        .page-wrapper {
+          min-height: 100vh;
+          padding-bottom: 100px !important; /* مساحة كافية للأقسام الأخيرة */
+          overflow: visible !important;
+        }
+        
+        /* ضمان ظهور جميع الأقسام */
+        section {
+          position: relative;
+          z-index: 1;
+        }
+        
+        /* الأقسام الأخيرة */
+        .cta-section,
+        .faq-section,
+        .support-section,
+        .partners-section {
+          margin-bottom: 30px !important;
+          padding-bottom: 30px !important;
+        }
+        
+        /* Footer */
+        footer,
+        .ns-footer-enhanced,
+        .mobile-bottom-nav {
+          position: relative !important;
+          bottom: auto !important;
+          margin-top: 40px;
+          z-index: 10;
+        }
+        
+        /* إصلاح القائمة السفلية على الموبايل */
+        .mobile-bottom-nav {
+          position: fixed !important;
+          bottom: 0 !important;
+          left: 0;
+          right: 0;
+          z-index: 999;
+        }
+      }
     </style>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -4076,3 +4126,4 @@
     <script src="courses.js"></script>
   </body>
 </html>
+>
