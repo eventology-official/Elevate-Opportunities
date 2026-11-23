@@ -1,8 +1,9 @@
 {
-  "name": "Elevate Opportunities",
-  "short_name": "Elevate Opportunities",
-  "description": "منصتك الشاملة لاكتشاف المسابقات والمنح الدراسية وفرص التطوع والوظائف",
+  "name": "Elevate - منصة الفرص التعليمية والمهنية",
+  "short_name": "Elevate",
+  "description": "منصتك الشاملة لاكتشاف المسابقات والمنح الدراسية وفرص التطوع والوظائف للطلاب والخريجين",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#090d16",
   "theme_color": "#090d16",
@@ -23,7 +24,33 @@
       "purpose": "any"
     }
   ],
-  "categories": ["education", "productivity"],
+  "categories": ["education", "productivity", "lifestyle"],
   "screenshots": [],
-  "shortcuts": []
+  "shortcuts": [
+    {
+      "name": "الفرص الجديدة",
+      "short_name": "فرص جديدة",
+      "description": "تصفح أحدث الفرص",
+      "url": "/?view=home",
+      "icons": [
+        {
+          "src": "images/Elevate.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "الكورسات",
+      "short_name": "كورسات",
+      "description": "تصفح الكورسات المجانية والمدفوعة",
+      "url": "/?view=courses",
+      "icons": [
+        {
+          "src": "images/Elevate.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }
