@@ -68,11 +68,16 @@
   
   /* Reduce animations for performance */
   .opp-card {
-    animation-duration: 0.3s !important;
+    animation: none !important; /* 🔥 تعطيل oppFadeUp تماماً */
+    animation-duration: 0s !important;
+    opacity: 1 !important; /* 🔥 إصلاح حاسم - فرض الظهور */
+    transform: translateY(0) !important; /* 🔥 إلغاء الحركة */
+    visibility: visible !important;
   }
   
   .opp-card:hover {
     transform: translateY(-3px) scale(1.005) !important;
+    opacity: 1 !important;
   }
 }
 

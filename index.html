@@ -40,7 +40,7 @@
     />
 
     <!-- External Stylesheet -->
-    <link rel="stylesheet" href="style.css?v=661799f" />
+    <link rel="stylesheet" href="style.css?v=662000" />
     <link rel="stylesheet" href="student-hub.css" />
     <link rel="stylesheet" href="wow.css" />
     <link rel="stylesheet" href="elevate-boost.css" />
@@ -48,8 +48,8 @@
     <link rel="stylesheet" href="admin-pro.css" />
     <link rel="stylesheet" href="admin-devices.css?v=devices-1" />
     <link rel="stylesheet" href="admin-visibility-control.css" />
-    <link rel="stylesheet" href="mobile-optimize.css?v=1" />
-    <link rel="stylesheet" href="mobile-cards-mini.css?v=1" />
+    <link rel="stylesheet" href="mobile-optimize.css?v=2" />
+    <link rel="stylesheet" href="mobile-cards-mini.css?v=4" />
     <link rel="stylesheet" href="community.css?v=ebc6df4" />
     <link rel="stylesheet" href="courses.css" />
     <link rel="stylesheet" href="footer-modern.css" />
@@ -4265,6 +4265,50 @@
     </script>
 
     <script src="drive-image.js"></script>
+    <script>
+      // 🔍 تشخيص عرض البطاقات على الموبايل
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          const container = document.getElementById('opp-cards-container');
+          const cards = JSON.parse(localStorage.getItem('luxen_general_cards') || '[]');
+          
+          console.log('=== MOBILE CARDS DIAGNOSTIC ===');
+          console.log('📦 Container exists:', !!container);
+          console.log('📊 Total cards in localStorage:', cards.length);
+          console.log('👁️ Container visible:', container ? window.getComputedStyle(container).display : 'N/A');
+          console.log('📏 Container innerHTML length:', container ? container.innerHTML.length : 0);
+          console.log('🔢 Visible cards on page:', document.querySelectorAll('.opp-card').length);
+          
+          // إذا كان الـ container موجود لكن فاضي، نعرض رسالة
+          if (container && container.innerHTML.trim() === '') {
+            console.warn('⚠️ Container is empty! Calling App.renderOpportunities()...');
+            if (window.App && typeof App.renderOpportunities === 'function') {
+              App.renderOpportunities();
+              console.log('✅ Render called manually');
+            }
+          }
+          
+          // 🔥 إصلاح حاسم: فرض opacity: 1 على كل البطاقات
+          const allCards = document.querySelectorAll('.opp-card');
+          allCards.forEach(function(card, index) {
+            const style = window.getComputedStyle(card);
+            
+            // فحص إذا كانت البطاقة مخفية
+            if (parseFloat(style.opacity) < 1 || style.display === 'none') {
+              console.log('🔧 Fixing card', index, ':', card.getAttribute('data-title'));
+              
+              // فرض الظهور
+              card.style.opacity = '1';
+              card.style.visibility = 'visible';
+              card.style.transform = 'translateY(0)';
+              card.style.animation = 'none';
+            }
+          });
+          
+          console.log('✅ All cards opacity fixed!');
+        }, 1500);
+      });
+    </script>
     <script src="script.js?v=auth-cloud-1"></script>
     <script src="extras.js?v=6dbfc4d"></script>
     <script src="live.js"></script>

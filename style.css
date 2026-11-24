@@ -2651,9 +2651,10 @@ body.lang-en .btn-back-home:hover {
   position: relative;
   transition: var(--transition);
   cursor: pointer;
-  opacity: 0;
-  animation: oppFadeUp 0.6s ease-out forwards;
+  opacity: 1;
+  /* animation: oppFadeUp 0.6s ease-out forwards; - تم التعطيل لإصلاح مشكلة الموبايل */
 }
+/* تم تعطيل animation delays لإصلاح مشكلة الموبايل
 .opp-card:nth-child(1) {
   animation-delay: 0.1s;
 }
@@ -2666,6 +2667,7 @@ body.lang-en .btn-back-home:hover {
 .opp-card:nth-child(4) {
   animation-delay: 0.4s;
 }
+*/
 .opp-card::before {
   content: "";
   position: absolute;
