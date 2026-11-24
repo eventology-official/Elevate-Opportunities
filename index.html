@@ -4241,24 +4241,21 @@
       }
 
       function filterOpportunitiesRaw(query) {
-        // شريط الفلترة الجديد (opp-filters.js) بيجمع البحث مع النوع والحالة والترتيب.
-        if (window.ElevateFilters && typeof window.ElevateFilters.apply === "function") {
-          window.ElevateFilters.apply();
-          return;
-        }
-        const cards = document.querySelectorAll(".opp-card");
-        const lowerQuery = query.toLowerCase();
+        // Filter by category only - no extra filters
+        const container = document.getElementById("opp-cards-container");
+        if (!container) return;
+        
+        const cards = container.querySelectorAll(".opp-card");
+        const q = (query || "").trim().toLowerCase();
+        
         cards.forEach((card) => {
-          const title = card.getAttribute("data-title").toLowerCase();
-          const tags = card.getAttribute("data-tags")
-            ? card.getAttribute("data-tags").toLowerCase()
-            : "";
-          if (card.style.display !== "none" || query === "") {
-            if (title.includes(lowerQuery) || tags.includes(lowerQuery)) {
-              card.style.display = "flex";
-            } else {
-              card.style.display = "none";
-            }
+          const title = (card.getAttribute("data-title") || "").toLowerCase();
+          const tags = (card.getAttribute("data-tags") || "").toLowerCase();
+          
+          if (q === "" || title.includes(q) || tags.includes(q)) {
+            card.style.display = "flex";
+          } else {
+            card.style.display = "none";
           }
         });
       }
@@ -4278,7 +4275,7 @@
     <script src="admin-core.js"></script>
     <script src="admin-plus.js?v=6dbfc4d"></script>
     <script src="admin-devices.js?v=devices-1"></script>
-    <script src="opp-filters.js"></script>
+    <!-- <script src="opp-filters.js"></script> -->
     <script src="desktop-mode-toggle.js"></script>
     <script src="password-resets.js"></script>
     <script src="wow.js"></script>
