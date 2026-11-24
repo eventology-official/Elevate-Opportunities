@@ -79,41 +79,53 @@
 @media (max-width: 480px) {
   /* Extra small screens - even more compact */
   .opp-cards-grid {
-    gap: 12px !important;
+    gap: 10px !important;
   }
   
   .opp-card {
-    border-radius: 12px !important;
+    border-radius: 10px !important;
   }
   
   .opp-card-header-img {
-    height: 110px !important;
+    height: 80px !important;
   }
   
   .opp-card-header-img i.main-icon {
-    font-size: 38px !important;
+    font-size: 32px !important;
   }
   
   .opp-card-body {
-    padding: 12px !important;
-    gap: 6px !important;
+    padding: 10px !important;
+    gap: 5px !important;
   }
   
   .opp-card-title {
-    font-size: 14px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
   }
   
   .opp-card-subtitle {
-    font-size: 11px !important;
+    font-size: 10px !important;
   }
   
   .opp-card-tags {
-    gap: 4px !important;
+    gap: 3px !important;
   }
   
   .opp-card-tags span {
-    font-size: 9px !important;
-    padding: 3px 6px !important;
+    font-size: 8px !important;
+    padding: 2px 5px !important;
+  }
+  
+  .opp-view-btn,
+  .opp-bookmark-bottom {
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+  }
+  
+  /* Footer in card */
+  .opp-card-footer {
+    gap: 6px !important;
   }
 }
 

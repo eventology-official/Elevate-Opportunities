@@ -1,0 +1,127 @@
+/**
+ * =====================================================================
+ * Mobile Cards - MINI SIZE
+ * =====================================================================
+ * بطاقات صغيرة جداً للموبايل لعرض أكتر فرص على الشاشة
+ * =====================================================================
+ */
+
+/* Mobile - MINI Cards */
+@media (max-width: 768px) {
+  .opp-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 6px 0 !important;
+  }
+  
+  .opp-card {
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .opp-card-header-img {
+    height: 70px !important;
+  }
+  
+  .opp-card-header-img i.main-icon {
+    font-size: 28px !important;
+  }
+  
+  .opp-card-body {
+    padding: 8px !important;
+    gap: 4px !important;
+  }
+  
+  .opp-card-title {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    -webkit-line-clamp: 2 !important;
+  }
+  
+  .opp-card-subtitle {
+    font-size: 9px !important;
+  }
+  
+  .opp-card-subtitle i {
+    font-size: 9px !important;
+  }
+  
+  .opp-card-tags {
+    gap: 2px !important;
+  }
+  
+  .opp-card-tags span {
+    font-size: 7px !important;
+    padding: 2px 4px !important;
+  }
+  
+  .opp-card-footer {
+    gap: 4px !important;
+    margin-top: 6px !important;
+  }
+  
+  .opp-view-btn,
+  .opp-bookmark-bottom {
+    padding: 5px 10px !important;
+    font-size: 10px !important;
+  }
+  
+  .opp-view-btn i,
+  .opp-bookmark-bottom i {
+    font-size: 10px !important;
+  }
+  
+  .opp-card {
+    animation-duration: 0.15s !important;
+  }
+  
+  .opp-card:hover {
+    transform: none !important;
+  }
+  
+  .opp-card::before {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .opp-cards-grid {
+    gap: 6px !important;
+  }
+  
+  .opp-card {
+    border-radius: 6px !important;
+  }
+  
+  .opp-card-header-img {
+    height: 60px !important;
+  }
+  
+  .opp-card-header-img i.main-icon {
+    font-size: 24px !important;
+  }
+  
+  .opp-card-body {
+    padding: 6px !important;
+    gap: 3px !important;
+  }
+  
+  .opp-card-title {
+    font-size: 11px !important;
+  }
+  
+  .opp-card-subtitle {
+    font-size: 8px !important;
+  }
+  
+  .opp-card-tags span {
+    font-size: 6px !important;
+    padding: 1px 3px !important;
+  }
+  
+  .opp-view-btn,
+  .opp-bookmark-bottom {
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+  }
+}
