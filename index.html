@@ -4306,7 +4306,49 @@
           });
           
           console.log('✅ All cards opacity fixed!');
+          
+          // 📋 Admin panel check
+          const adminList = document.getElementById('admin-manage-list');
+          if (adminList) {
+            console.log('=== ADMIN PANEL DIAGNOSTIC ===');
+            console.log('📊 Admin list exists:', !!adminList);
+            console.log('📏 Admin list innerHTML length:', adminList.innerHTML.length);
+            
+            // Force render if empty
+            if (adminList.innerHTML.trim() === '' && window.Admin && typeof Admin.renderManageList === 'function') {
+              console.warn('⚠️ Admin list is empty! Calling Admin.renderManageList()...');
+              Admin.renderManageList();
+              console.log('✅ Admin list rendered manually');
+            }
+          }
         }, 1500);
+      });
+      
+      // 🔄 Force data sync on page load
+      window.addEventListener('load', function() {
+        console.log('=== FORCING DATA SYNC ===');
+        
+        // Check if data exists
+        const cards = JSON.parse(localStorage.getItem('luxen_general_cards') || '[]');
+        console.log('📦 Cards in localStorage:', cards.length);
+        
+        // If no data, try to sync from Supabase
+        if (cards.length === 0 && window.ElevateDB && typeof ElevateDB.refresh === 'function') {
+          console.log('⚠️ No data found! Syncing from Supabase...');
+          ElevateDB.refresh().then(function() {
+            console.log('✅ Data synced from Supabase');
+            
+            // Re-render everything
+            if (window.App && typeof App.renderOpportunities === 'function') {
+              App.renderOpportunities();
+            }
+            if (window.Admin && typeof Admin.renderManageList === 'function') {
+              Admin.renderManageList();
+            }
+          }).catch(function(err) {
+            console.error('❌ Supabase sync failed:', err);
+          });
+        }
       });
     </script>
     <script src="script.js?v=auth-cloud-1"></script>

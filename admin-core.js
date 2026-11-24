@@ -64,6 +64,33 @@ Admin.init = function() {
     }
   });
   
+  // Render admin data lists
+  if (typeof Admin.renderManageList === 'function') {
+    console.log('[Admin] Rendering opportunities list...');
+    Admin.renderManageList();
+  }
+  
+  if (typeof Admin.renderDatedList === 'function') {
+    console.log('[Admin] Rendering dated opportunities...');
+    Admin.renderDatedList();
+  }
+  
+  if (typeof Admin.renderUndatedList === 'function') {
+    console.log('[Admin] Rendering undated opportunities...');
+    Admin.renderUndatedList();
+  }
+  
+  if (typeof Admin.updateCounters === 'function') {
+    console.log('[Admin] Updating counters...');
+    Admin.updateCounters();
+  }
+  
+  // Initialize admin sections that need data
+  if (typeof AdminTeachersApp !== 'undefined' && typeof AdminTeachersApp.init === 'function') {
+    console.log('[Admin] Initializing teachers management...');
+    AdminTeachersApp.init();
+  }
+  
   // Show first section by default
   setTimeout(function() {
     const firstSection = document.querySelector('.admin-section');
@@ -71,6 +98,8 @@ Admin.init = function() {
       Admin.switchSection(firstSection.id);
     }
   }, 100);
+  
+  console.log('[Admin] ✓ Initialization complete');
 };
 
 console.log('[Admin] Core module loaded');
