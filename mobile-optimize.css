@@ -1,0 +1,429 @@
+/**
+ * =====================================================================
+ * Elevate Platform — Mobile Optimization
+ * =====================================================================
+ * تحسينات الأداء والتصميم للموبايل
+ * - بطاقات أصغر وأسرع
+ * - تقليل الـ animations
+ * - تحسين الأداء
+ * =====================================================================
+ */
+
+/* ===================================
+   Mobile Cards Optimization
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Grid optimization */
+  .opp-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 8px 0 !important;
+  }
+  
+  /* Card compact size */
+  .opp-card {
+    border-radius: 14px !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15) !important;
+  }
+  
+  /* Smaller header image */
+  .opp-card-header-img {
+    height: 130px !important;
+  }
+  
+  .opp-card-header-img i.main-icon {
+    font-size: 44px !important;
+  }
+  
+  /* Compact body padding */
+  .opp-card-body {
+    padding: 14px !important;
+    gap: 8px !important;
+  }
+  
+  /* Smaller title */
+  .opp-card-title {
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Smaller subtitle */
+  .opp-card-subtitle {
+    font-size: 12px !important;
+  }
+  
+  /* Smaller tags */
+  .opp-card-tags span {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+  
+  /* Compact buttons */
+  .opp-view-btn,
+  .opp-bookmark-bottom {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+  
+  /* Reduce animations for performance */
+  .opp-card {
+    animation-duration: 0.3s !important;
+  }
+  
+  .opp-card:hover {
+    transform: translateY(-3px) scale(1.005) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens - even more compact */
+  .opp-cards-grid {
+    gap: 12px !important;
+  }
+  
+  .opp-card {
+    border-radius: 12px !important;
+  }
+  
+  .opp-card-header-img {
+    height: 110px !important;
+  }
+  
+  .opp-card-header-img i.main-icon {
+    font-size: 38px !important;
+  }
+  
+  .opp-card-body {
+    padding: 12px !important;
+    gap: 6px !important;
+  }
+  
+  .opp-card-title {
+    font-size: 14px !important;
+  }
+  
+  .opp-card-subtitle {
+    font-size: 11px !important;
+  }
+  
+  .opp-card-tags {
+    gap: 4px !important;
+  }
+  
+  .opp-card-tags span {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+}
+
+/* ===================================
+   Performance Optimization
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Disable heavy animations on mobile */
+  .opp-card::before {
+    display: none !important;
+  }
+  
+  /* Simpler transitions */
+  .opp-card,
+  .opp-card-title,
+  .opp-card-subtitle i,
+  .opp-card-tags span {
+    transition: all 0.2s ease !important;
+  }
+  
+  /* Reduce blur effects */
+  .opp-card.is-soon .opp-card-header-img,
+  .opp-card.is-soon .opp-card-body {
+    filter: blur(2px) !important;
+  }
+  
+  /* Lighter shadows */
+  .btn,
+  .category-card,
+  .partner-card,
+  .prof-action-btn {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* ===================================
+   Hero Section - Mobile
+   =================================== */
+
+@media (max-width: 768px) {
+  .hero-ultra {
+    min-height: 300px !important;
+    padding: 60px 20px 40px !important;
+  }
+  
+  .hero-title {
+    font-size: 1.8rem !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.95rem !important;
+  }
+  
+  .hero-search-box {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-ultra {
+    min-height: 250px !important;
+    padding: 50px 16px 30px !important;
+  }
+  
+  .hero-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* ===================================
+   Category Cards - Mobile
+   =================================== */
+
+@media (max-width: 768px) {
+  .category-card {
+    padding: 16px !important;
+    min-height: auto !important;
+  }
+  
+  .category-icon-box {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.3rem !important;
+  }
+  
+  .category-name {
+    font-size: 14px !important;
+  }
+  
+  .category-count {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-card {
+    padding: 12px !important;
+  }
+  
+  .category-icon-box {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.1rem !important;
+  }
+  
+  .category-name {
+    font-size: 13px !important;
+  }
+}
+
+/* ===================================
+   Detail View - Mobile
+   =================================== */
+
+@media (max-width: 768px) {
+  .detail-container {
+    padding: 16px !important;
+  }
+  
+  .detail-hero-image {
+    height: 200px !important;
+  }
+  
+  .detail-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .detail-meta {
+    font-size: 12px !important;
+  }
+  
+  .detail-description {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-hero-image {
+    height: 160px !important;
+  }
+  
+  .detail-title {
+    font-size: 1.3rem !important;
+  }
+  
+  .detail-meta {
+    font-size: 11px !important;
+  }
+}
+
+/* ===================================
+   Bottom Navigation - Mobile
+   =================================== */
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    padding: 10px 8px !important;
+  }
+  
+  .bottom-nav-item {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+  
+  .bottom-nav-item i {
+    font-size: 18px !important;
+  }
+}
+
+/* ===================================
+   Loading & Performance
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Reduce animation delays on mobile */
+  .opp-card:nth-child(1),
+  .opp-card:nth-child(2),
+  .opp-card:nth-child(3),
+  .opp-card:nth-child(4) {
+    animation-delay: 0s !important;
+  }
+  
+  /* Disable parallax effects */
+  [data-parallax] {
+    transform: none !important;
+  }
+  
+  /* Simpler gradients */
+  .gradient-bg,
+  .hero-ultra,
+  .prof-header {
+    background-attachment: scroll !important;
+  }
+}
+
+/* ===================================
+   Text & Font Optimization
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Optimize font rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeSpeed;
+  }
+  
+  /* Reduce line heights for compact view */
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.2 !important;
+  }
+  
+  p {
+    line-height: 1.5 !important;
+  }
+}
+
+/* ===================================
+   Images Optimization
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Lazy load hint for images */
+  img {
+    content-visibility: auto;
+  }
+  
+  /* Partner logos smaller */
+  .partner-logo {
+    max-width: 80px !important;
+  }
+  
+  /* Course thumbnails */
+  .course-thumbnail {
+    height: 140px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .partner-logo {
+    max-width: 60px !important;
+  }
+  
+  .course-thumbnail {
+    height: 120px !important;
+  }
+}
+
+/* ===================================
+   Scroll Performance
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Smooth scrolling optimization */
+  * {
+    scroll-behavior: auto !important;
+  }
+  
+  /* Reduce will-change usage */
+  .opp-card,
+  .category-card,
+  .btn {
+    will-change: auto !important;
+  }
+}
+
+/* ===================================
+   Admin Panel - Mobile
+   =================================== */
+
+@media (max-width: 768px) {
+  .admin-nav {
+    gap: 8px !important;
+  }
+  
+  .admin-nav-btn {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  
+  .admin-nav-btn i {
+    font-size: 14px !important;
+  }
+  
+  .admin-stat-box {
+    padding: 14px !important;
+  }
+  
+  .admin-deck-full {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-nav-btn {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+  
+  .admin-nav-btn span {
+    display: none !important;
+  }
+  
+  .admin-nav-btn i {
+    margin: 0 !important;
+  }
+}
