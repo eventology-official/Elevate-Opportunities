@@ -106,10 +106,15 @@
     }
 
     try {
-      console.log("☁ [Supabase] جاري جلب أحدث البيانات من قاعدة البيانات السحابية...");
+      console.log("☁ [Supabase] جاري جلب البيانات من السحابة...");
 
-      // 1. Fetch Store (cards, courses, settings, etc.)
-      var storeData = await window.ElevateSupabase.fetchStore();
+      // 1. Fetch Store (cards, courses, settings, etc.) - بدون await للسرعة
+      const storePromise = window.ElevateSupabase.fetchStore();
+      const usersPromise = window.ElevateSupabase.fetchUsers();
+      
+      const [storeData, usersData] = await Promise.all([storePromise, usersPromise]);
+      
+      // Save store data
       if (storeData && typeof storeData === "object") {
         for (var k in storeData) {
           if (Object.prototype.hasOwnProperty.call(storeData, k)) {
@@ -119,8 +124,7 @@
         }
       }
 
-      // 2. Fetch Users
-      var usersData = await window.ElevateSupabase.fetchUsers();
+      // 2. Save Users
       if (Array.isArray(usersData)) {
         var mappedUsers = usersData.map(function (u) {
           return {
@@ -150,7 +154,7 @@
         console.log("✔ [Supabase] تم استرجاع " + mappedUsers.length + " مستخدم من قاعدة البيانات السحابية");
       }
 
-      console.log("✔ [Elevate] تمت المزامنة السحابية بنجاح من Supabase!");
+      console.log("✔ [Elevate] تمت المزامنة السحابية بنجاح!");
       isCloudReady = true;
 
       // Dispatch events

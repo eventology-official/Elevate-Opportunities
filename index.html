@@ -4267,89 +4267,23 @@
 
     <script src="drive-image.js"></script>
     <script>
-      // 🔍 تشخيص عرض البطاقات على الموبايل
-      window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-          const container = document.getElementById('opp-cards-container');
-          const cards = JSON.parse(localStorage.getItem('luxen_general_cards') || '[]');
-          
-          console.log('=== MOBILE CARDS DIAGNOSTIC ===');
-          console.log('📦 Container exists:', !!container);
-          console.log('📊 Total cards in localStorage:', cards.length);
-          console.log('👁️ Container visible:', container ? window.getComputedStyle(container).display : 'N/A');
-          console.log('📏 Container innerHTML length:', container ? container.innerHTML.length : 0);
-          console.log('🔢 Visible cards on page:', document.querySelectorAll('.opp-card').length);
-          
-          // إذا كان الـ container موجود لكن فاضي، نعرض رسالة
-          if (container && container.innerHTML.trim() === '') {
-            console.warn('⚠️ Container is empty! Calling App.renderOpportunities()...');
-            if (window.App && typeof App.renderOpportunities === 'function') {
-              App.renderOpportunities();
-              console.log('✅ Render called manually');
-            }
-          }
-          
-          // 🔥 إصلاح حاسم: فرض opacity: 1 على كل البطاقات
-          const allCards = document.querySelectorAll('.opp-card');
-          allCards.forEach(function(card, index) {
-            const style = window.getComputedStyle(card);
-            
-            // فحص إذا كانت البطاقة مخفية
-            if (parseFloat(style.opacity) < 1 || style.display === 'none') {
-              console.log('🔧 Fixing card', index, ':', card.getAttribute('data-title'));
-              
-              // فرض الظهور
-              card.style.opacity = '1';
-              card.style.visibility = 'visible';
-              card.style.transform = 'translateY(0)';
-              card.style.animation = 'none';
-            }
-          });
-          
-          console.log('✅ All cards opacity fixed!');
-          
-          // 📋 Admin panel check
-          const adminList = document.getElementById('admin-manage-list');
-          if (adminList) {
-            console.log('=== ADMIN PANEL DIAGNOSTIC ===');
-            console.log('📊 Admin list exists:', !!adminList);
-            console.log('📏 Admin list innerHTML length:', adminList.innerHTML.length);
-            
-            // Force render if empty
-            if (adminList.innerHTML.trim() === '' && window.Admin && typeof Admin.renderManageList === 'function') {
-              console.warn('⚠️ Admin list is empty! Calling Admin.renderManageList()...');
-              Admin.renderManageList();
-              console.log('✅ Admin list rendered manually');
-            }
-          }
-        }, 1500);
-      });
-      
-      // 🔄 Force data sync on page load
+      // ⚡ تحميل سريع للبيانات
       window.addEventListener('load', function() {
-        console.log('=== FORCING DATA SYNC ===');
-        
-        // Check if data exists
+        // Check data once
         const cards = JSON.parse(localStorage.getItem('luxen_general_cards') || '[]');
-        console.log('📦 Cards in localStorage:', cards.length);
         
-        // If no data, try to sync from Supabase
-        if (cards.length === 0 && window.ElevateDB && typeof ElevateDB.refresh === 'function') {
-          console.log('⚠️ No data found! Syncing from Supabase...');
-          ElevateDB.refresh().then(function() {
-            console.log('✅ Data synced from Supabase');
-            
-            // Re-render everything
-            if (window.App && typeof App.renderOpportunities === 'function') {
-              App.renderOpportunities();
-            }
-            if (window.Admin && typeof Admin.renderManageList === 'function') {
-              Admin.renderManageList();
-            }
-          }).catch(function(err) {
-            console.error('❌ Supabase sync failed:', err);
-          });
+        if (cards.length === 0 && window.ElevateRecovery) {
+          console.log('⚠️ لا توجد بيانات - بدء الاسترجاع...');
+          ElevateRecovery.forceRecovery();
         }
+        
+        // Fix card opacity on mobile
+        setTimeout(function() {
+          document.querySelectorAll('.opp-card').forEach(function(card) {
+            card.style.opacity = '1';
+            card.style.animation = 'none';
+          });
+        }, 500);
       });
     </script>
     <script src="script.js?v=auth-cloud-1"></script>

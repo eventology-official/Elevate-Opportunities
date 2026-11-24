@@ -48,15 +48,16 @@ Admin.switchSection = function(sectionId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Initialize function
+// Initialize function - محسّن للسرعة
 Admin.init = function() {
-  console.log('[Admin] Core initialized');
+  console.log('[Admin] تهيئة سريعة...');
   
-  // Setup nav button click handlers
+  // Setup nav buttons - بدون await
   const navButtons = document.querySelectorAll('.admin-nav-btn');
   navButtons.forEach(function(btn) {
     const sectionId = btn.getAttribute('data-sec');
-    if (sectionId) {
+    if (sectionId && !btn.dataset.listenerAdded) {
+      btn.dataset.listenerAdded = 'true';
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         Admin.switchSection(sectionId);
@@ -64,42 +65,22 @@ Admin.init = function() {
     }
   });
   
-  // Render admin data lists
-  if (typeof Admin.renderManageList === 'function') {
-    console.log('[Admin] Rendering opportunities list...');
-    Admin.renderManageList();
-  }
-  
-  if (typeof Admin.renderDatedList === 'function') {
-    console.log('[Admin] Rendering dated opportunities...');
-    Admin.renderDatedList();
-  }
-  
-  if (typeof Admin.renderUndatedList === 'function') {
-    console.log('[Admin] Rendering undated opportunities...');
-    Admin.renderUndatedList();
-  }
-  
-  if (typeof Admin.updateCounters === 'function') {
-    console.log('[Admin] Updating counters...');
-    Admin.updateCounters();
-  }
-  
-  // Initialize admin sections that need data
-  if (typeof AdminTeachersApp !== 'undefined' && typeof AdminTeachersApp.init === 'function') {
-    console.log('[Admin] Initializing teachers management...');
-    AdminTeachersApp.init();
-  }
-  
-  // Show first section by default
+  // Render data lists - فقط اللي موجود
   setTimeout(function() {
-    const firstSection = document.querySelector('.admin-section');
-    if (firstSection && firstSection.id) {
-      Admin.switchSection(firstSection.id);
+    if (typeof Admin.renderManageList === 'function') {
+      Admin.renderManageList();
     }
-  }, 100);
+    
+    if (typeof Admin.renderPartnersList === 'function') {
+      Admin.renderPartnersList();
+    }
+    
+    if (typeof Admin.updateCounters === 'function') {
+      Admin.updateCounters();
+    }
+  }, 50);
   
-  console.log('[Admin] ✓ Initialization complete');
+  console.log('[Admin] ✓ جاهز');
 };
 
 console.log('[Admin] Core module loaded');
