@@ -636,6 +636,9 @@
       }
 
       this.saveLikes(likes);
+      if (window.ElevateSupabase && typeof ElevateSupabase.recordEngagement === "function") {
+        ElevateSupabase.recordEngagement("course_like", courseId, userId, user.name || userId, null, true).catch(function () {});
+      }
 
       var btn = document.getElementById("course-like-btn");
       var count = document.getElementById("course-like-count");
@@ -656,6 +659,10 @@
         bookmarks.push(courseId);
       }
       this.saveBookmarks(bookmarks);
+      var u = getCurrentUser();
+      if (u && u.id && window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.savePersonalData(u.id, "luxen_course_bookmarks", bookmarks).catch(function () {});
+      }
 
       var btn = document.getElementById("course-bookmark-btn");
       if (btn) {
@@ -687,15 +694,28 @@
       var authorName = user ? (user.name || user.username || "عضو") : "زائر";
 
       var comments = this.getComments();
-      comments.unshift({
+      var newC = {
         id: "cc_" + Date.now(),
         courseId: courseId,
         author: authorName,
         text: text,
         time: new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }) + " · اليوم",
-      });
+      };
+      comments.unshift(newC);
 
       this.saveComments(comments);
+      if (window.ElevateSupabase && typeof ElevateSupabase.addComment === "function") {
+        ElevateSupabase.addComment({
+          id: newC.id,
+          scope: "course",
+          itemId: courseId,
+          userId: user ? user.id : null,
+          username: user ? user.username : "guest",
+          displayName: authorName,
+          text: text,
+          dateLabel: newC.time,
+        }).catch(function () {});
+      }
       input.value = "";
       this.renderCommentsList(courseId);
     },
@@ -891,16 +911,33 @@
         createdAt: Date.now()
       };
 
-      // Save binary video file into IndexedDB
+      // Save binary video file into IndexedDB & upload to Supabase Storage
       CoursesMediaDB.saveVideo(courseId, self.pendingVideoFile, self.pendingVideoFile.name).then(function () {
         if (self.pendingImageFile) {
           return CoursesMediaDB.saveImage(courseId, self.pendingImageFile, self.pendingImageFile.name);
         }
         return true;
-      }).then(function () {
+      }).then(async function () {
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          try {
+            var vExt = (self.pendingVideoFile.name.split(".").pop() || "mp4").replace(/[^a-zA-Z0-9]/g, "");
+            var vUp = await ElevateSupabase.uploadFile("course-media", "courses/" + courseId + "/video." + vExt, self.pendingVideoFile);
+            newCourse.videoPath = vUp.path;
+            if (self.pendingImageFile) {
+              var iExt = (self.pendingImageFile.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "");
+              var iUp = await ElevateSupabase.uploadFile("public-assets", "courses/" + courseId + "/thumb." + iExt, self.pendingImageFile);
+              newCourse.thumbnail = iUp.publicUrl;
+            }
+          } catch (upErr) {
+            console.warn("[TeacherApp] Cloud media upload notice:", upErr);
+          }
+        }
         var list = CoursesApp.getCourses();
         list.unshift(newCourse);
         CoursesApp.saveCourses(list);
+        if (window.ElevateDB && typeof ElevateDB.saveCourse === "function") {
+          ElevateDB.saveCourse(newCourse).catch(function () {});
+        }
 
         alert("تم رفع ونشر الكورس بنجاح من جهازك!");
 
@@ -1019,9 +1056,9 @@
       var list = CoursesApp.getCourses().filter(function (c) { return String(c.id) !== String(courseId); });
       CoursesApp.saveCourses(list);
       CoursesMediaDB.deleteMedia(courseId);
-
-      // OFFLINE MODE: No server sync needed - all data is local
-      // Data is already saved in localStorage by saveCourses() above
+      if (window.ElevateDB && typeof ElevateDB.deleteCourse === "function") {
+        ElevateDB.deleteCourse(courseId).catch(function () {});
+      }
 
       var user = getCurrentUser();
       this.renderDashboard(user);
@@ -1074,16 +1111,20 @@
       }
 
       var user = getCurrentUser();
-      subs.unshift({
+      var newSub = {
         id: "sub_" + Date.now(),
         courseId: courseId,
         courseTitle: courseTitle,
         identifier: userInput,
         activatedAt: new Date().toLocaleDateString("ar-EG") + " " + new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
         activatedBy: user ? (user.name || user.username) : "المدرس"
-      });
+      };
+      subs.unshift(newSub);
 
       CoursesApp.saveSubscriptions(subs);
+      if (window.ElevateSupabase && typeof ElevateSupabase.addCourseSubscription === "function") {
+        ElevateSupabase.addCourseSubscription(newSub).catch(function () {});
+      }
       document.getElementById("teacher-subscriber-input").value = "";
       this.renderSubscribersList();
       this.updateTeacherStats(user);
@@ -1120,6 +1161,9 @@
       if (!confirm("هل تريد إلغاء تفعيل هذا المشترك؟")) return;
       var subs = CoursesApp.getSubscriptions().filter(function (s) { return String(s.id) !== String(subId); });
       CoursesApp.saveSubscriptions(subs);
+      if (window.ElevateSupabase && typeof ElevateSupabase.removeCourseSubscription === "function") {
+        ElevateSupabase.removeCourseSubscription(subId).catch(function () {});
+      }
       this.renderSubscribersList();
       var user = getCurrentUser();
       this.updateTeacherStats(user);
@@ -1134,7 +1178,7 @@
       this.renderTeachersList();
     },
 
-    createTeacherAccount: function (event) {
+    createTeacherAccount: async function (event) {
       if (event) event.preventDefault();
 
       var name = (document.getElementById("adm-teacher-name")?.value || "").trim();
@@ -1143,27 +1187,13 @@
       var phone = (document.getElementById("adm-teacher-phone")?.value || "").trim();
       var active = document.getElementById("adm-teacher-active")?.checked ?? true;
 
-      if (!name) {
-        alert("يرجى كتابة اسم المدرس.");
-        return;
-      }
-      if (!email) {
-        alert("يرجى كتابة البريد الإلكتروني للمدرس.");
-        return;
-      }
-      if (!password || password.length < 8) {
-        alert("كلمة المرور يجب ألا تقل عن 8 أحرف.");
-        return;
-      }
-      if (!phone) {
-        alert("يرجى كتابة رقم الهاتف / واتساب للتواصل مع المدرس.");
-        return;
-      }
+      if (!name) { alert("يرجى كتابة اسم المدرس."); return; }
+      if (!email) { alert("يرجى كتابة البريد الإلكتروني للمدرس."); return; }
+      if (!password || password.length < 8) { alert("كلمة المرور يجب ألا تقل عن 8 أحرف."); return; }
+      if (!phone) { alert("يرجى كتابة رقم الهاتف / واتساب للتواصل مع المدرس."); return; }
 
       var users = [];
-      try {
-        users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
-      } catch (e) {}
+      try { users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]"); } catch (e) {}
 
       var exists = users.some(function (u) {
         return (
@@ -1171,39 +1201,40 @@
           (u.email && u.email.toLowerCase() === email.toLowerCase())
         );
       });
-
       if (exists) {
         alert("هذا البريد أو اسم المستخدم مسجل مسبقاً لمستخدم آخر.");
         return;
       }
 
-      var teacherUser = {
-        id: "teacher_" + Date.now(),
-        username: email,
-        email: email,
-        fullName: name,
-        teacherName: name,
-        phone: phone,
-        password: password,
-        isAdmin: false,
-        isTeacher: true,
-        customRoleTitle: "مدرس معتمد",
-        isActive: active,
-        isOnline: false,
-        join_date: new Date().toLocaleDateString("ar-EG"),
-        join_timestamp: Date.now()
-      };
-
-      users.push(teacherUser);
-      localStorage.setItem("luxen_all_users", JSON.stringify(users));
-
-      document.getElementById("adminTeacherForm")?.reset();
-      if (document.getElementById("adm-teacher-active")) {
-        document.getElementById("adm-teacher-active").checked = true;
+      try {
+        var res = await ElevateSupabase.callAuthGateway("admin_create_user", {
+          user: {
+            username: email,
+            email: email,
+            fullName: name,
+            teacherName: name,
+            phone: phone,
+            password: password,
+            isTeacher: true,
+            customRoleTitle: "مدرس معتمد",
+            isActive: active
+          }
+        });
+        if (!res || !res.ok || !res.user) {
+          alert((res && res.error) || "تعذر إنشاء حساب المدرس.");
+          return;
+        }
+        users.push(res.user);
+        localStorage.setItem("luxen_all_users", JSON.stringify(users));
+        document.getElementById("adminTeacherForm")?.reset();
+        if (document.getElementById("adm-teacher-active")) {
+          document.getElementById("adm-teacher-active").checked = true;
+        }
+        this.renderTeachersList();
+        alert("تم إنشاء حساب المدرس (" + name + ") بنجاح! يمكن للمدرس الآن تسجيل الدخول مباشرة.");
+      } catch (e) {
+        alert("تعذر إنشاء حساب المدرس.");
       }
-
-      this.renderTeachersList();
-      alert("تم إنشاء حساب المدرس (" + name + ") بنجاح! يمكن للمدرس الآن تسجيل الدخول مباشرة.");
     },
 
     renderTeachersList: function () {
@@ -1287,6 +1318,12 @@
       t.isActive = t.isActive === false ? true : false;
       localStorage.setItem("luxen_all_users", JSON.stringify(users));
       this.renderTeachersList();
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.callAuthGateway("admin_toggle_user_active", {
+          userId: teacherId,
+          isActive: t.isActive
+        }).catch(function () {});
+      }
     },
 
     deleteTeacher: function (teacherId) {
@@ -1320,9 +1357,9 @@
         return true;
       });
       localStorage.setItem("luxen_all_users", JSON.stringify(users));
-
-      // OFFLINE MODE: No server sync needed - data already saved in localStorage above
-      console.log("[Admin] Teacher permanently deleted from local storage:", deletedIds);
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.callAuthGateway("admin_delete_user", { userId: teacherId }).catch(function () {});
+      }
 
       this.renderTeachersList();
     }

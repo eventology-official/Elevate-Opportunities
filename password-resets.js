@@ -117,12 +117,15 @@
 
     list.innerHTML = rows
       .map(function (row) {
+        var ident = row.identifier || row.username || "";
         return (
-          '<div class="pr-row" data-user="' +
-          esc(row.username) +
+          '<div class="pr-row" data-id="' +
+          esc(row.id || "") +
+          '" data-user="' +
+          esc(ident) +
           '">' +
           '<div class="pr-head"><b>' +
-          esc(row.username) +
+          esc(ident) +
           "</b><em>" +
           esc(when(row.created_at)) +
           "</em></div>" +
@@ -139,6 +142,7 @@
   }
 
   function run(row, action, button) {
+    var reqId = row.getAttribute("data-id") || "";
     var username = row.getAttribute("data-user") || "";
     var box = row.querySelector(".pr-status");
     var passEl = row.querySelector(".pr-pass");
@@ -153,12 +157,17 @@
     status(box, "جارٍ التنفيذ...", "");
 
     var payload =
-      action === "set" ? { username: username, password: password } : { username: username };
-    call(action === "set" ? "admin_reset_password" : "admin_reject_password_reset", payload)
+      action === "set"
+        ? { requestId: reqId, identifier: username, password: password }
+        : { requestId: reqId, identifier: username };
+    ElevateSupabase.callAuthGateway(
+      action === "set" ? "admin_reset_password" : "admin_reject_password_reset",
+      payload,
+    )
       .then(function (res) {
         button.disabled = false;
-        if (!res.ok || !res.data || res.data.ok === false) {
-          status(box, (res.data && res.data.error) || "تعذّر التنفيذ.", "err");
+        if (!res || !res.ok) {
+          status(box, (res && res.error) || "تعذّر التنفيذ.", "err");
           return;
         }
         status(

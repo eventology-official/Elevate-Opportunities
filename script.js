@@ -135,6 +135,15 @@ const Admin = {
     this._saveUsers(users);
     this.renderMembers();
     this.updateCounters();
+    if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.callAuthGateway("admin_toggle_user_active", {
+        userId: u.id,
+        username: u.username,
+        isActive: u.isActive,
+      }).catch(function (err) {
+        console.warn("[Admin] toggleMemberActive sync error:", err);
+      });
+    }
   },
 
   renderMembers() {
@@ -200,7 +209,7 @@ const Admin = {
     inbox: "صندوق الرسائل",
   },
 
-  createTeamAccount(event) {
+  async createTeamAccount(event) {
     event.preventDefault();
     const name = document.getElementById("team-name").value.trim();
     const email = document.getElementById("team-email").value.trim();
@@ -227,27 +236,32 @@ const Admin = {
       return;
     }
 
-    users.push({
-      id: "team_" + Date.now(),
-      username: email,
-      email: email,
-      fullName: name,
-      phone: "",
-      password: password,
-      isAdmin: false,
-      isTeam: true,
-      customRoleTitle: roleTitle,
-      perms: perms,
-      isActive: active,
-      isOnline: false,
-      join_date: new Date().toLocaleDateString("ar-EG"),
-      join_timestamp: Date.now(),
-    });
-    this._saveUsers(users);
-    document.getElementById("adminTeamForm").reset();
-    document.getElementById("team-active").checked = true;
-    this.renderTeam();
-    alert(`تم إنشاء حساب (${name}) وتعيين دوره: [${roleTitle}] بنجاح.`);
+    try {
+      const res = await ElevateSupabase.callAuthGateway("admin_create_user", {
+        user: {
+          username: email,
+          email: email,
+          fullName: name,
+          password: password,
+          isTeam: true,
+          customRoleTitle: roleTitle,
+          perms: perms,
+          isActive: active,
+        },
+      });
+      if (!res || !res.ok || !res.user) {
+        alert((res && res.error) || "تعذر إنشاء حساب الفريق.");
+        return;
+      }
+      users.push(res.user);
+      this._saveUsers(users);
+      document.getElementById("adminTeamForm").reset();
+      document.getElementById("team-active").checked = true;
+      this.renderTeam();
+      alert(`تم إنشاء حساب (${name}) وتعيين دوره: [${roleTitle}] بنجاح.`);
+    } catch (e) {
+      alert("تعذر إنشاء حساب الفريق.");
+    }
   },
 
   toggleTeamActive(id) {
@@ -257,12 +271,21 @@ const Admin = {
     u.isActive = u.isActive === false;
     this._saveUsers(users);
     this.renderTeam();
+    if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.callAuthGateway("admin_toggle_user_active", {
+        userId: u.id,
+        isActive: u.isActive,
+      }).catch(function () {});
+    }
   },
 
   deleteTeamAccount(id) {
     if (!confirm("هل تريد حذف حساب الفريق نهائياً؟")) return;
     this._saveUsers(this._users().filter((u) => u.id !== id));
     this.renderTeam();
+    if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.callAuthGateway("admin_delete_user", { userId: id }).catch(function () {});
+    }
   },
 
   renderTeam() {
@@ -371,8 +394,11 @@ const Admin = {
     let partners = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
     let comments = JSON.parse(localStorage.getItem("luxen_comments") || "[]");
     let likesData = JSON.parse(localStorage.getItem("luxen_likes") || "{}");
-    let totalLikes = Object.values(likesData).reduce((sum, n) => sum + (parseInt(n) || 0), 0);
-    let faqs = JSON.parse(localStorage.getItem("luxen_faqs") || "[]");
+    let totalLikes = Object.values(likesData).reduce(
+      (sum, n) => sum + (Array.isArray(n) ? n.length : parseInt(n) || 0),
+      0,
+    );
+    let faqs = JSON.parse(localStorage.getItem("luxen_faq") || "[]");
 
     let normalMembers = users.filter((u) => !u.isTeam && u.username !== "admin@elevate.com");
     let teamMembers = users.filter((u) => u.isTeam);
@@ -614,6 +640,11 @@ const Admin = {
     }
 
     localStorage.setItem("luxen_general_cards", JSON.stringify(cards));
+    if (window.ElevateDB && typeof ElevateDB.saveOpportunity === "function") {
+      ElevateDB.saveOpportunity(newCard).catch(function (err) {
+        console.warn("[Admin] saveData cloud sync error:", err);
+      });
+    }
     if (!isEditing) this.pushAutoNotification(newCard);
     this.closeModal();
     if (document.getElementById("admin-manage-list")) this.init();
@@ -861,6 +892,9 @@ const Admin = {
     cards[index].expiryOverride = true;
     if (cards[index].status === "expired") cards[index].status = "visible";
     localStorage.setItem("luxen_general_cards", JSON.stringify(cards));
+    if (window.ElevateDB && typeof ElevateDB.saveOpportunity === "function") {
+      ElevateDB.saveOpportunity(cards[index]).catch(function () {});
+    }
     this.renderManageList();
     this.renderDatedList();
     this.renderUndatedList();
@@ -878,8 +912,8 @@ const Admin = {
     cards[idx].status = newStatus;
     localStorage.setItem("luxen_general_cards", JSON.stringify(cards));
 
-    if (window.ElevateDB && typeof window.ElevateDB.syncCards === "function") {
-      window.ElevateDB.syncCards(cards);
+    if (window.ElevateDB && typeof window.ElevateDB.saveOpportunity === "function") {
+      window.ElevateDB.saveOpportunity(cards[idx]).catch(function () {});
     }
 
     this.renderManageList();
@@ -963,8 +997,8 @@ const Admin = {
       );
     }
 
-    if (window.ElevateDB && typeof window.ElevateDB.syncSettings === "function") {
-      window.ElevateDB.syncSettings({ luxen_category_status: stats });
+    if (window.ElevateSupabase && typeof window.ElevateSupabase.saveStoreKey === "function") {
+      window.ElevateSupabase.saveStoreKey("luxen_category_status", stats).catch(function () {});
     }
 
     App.applyCategoryStatuses();
@@ -1008,6 +1042,9 @@ const Admin = {
       let cards = JSON.parse(localStorage.getItem("luxen_general_cards") || "[]");
       cards = cards.filter((c) => c.id != id);
       localStorage.setItem("luxen_general_cards", JSON.stringify(cards));
+      if (window.ElevateDB && typeof ElevateDB.deleteOpportunity === "function") {
+        ElevateDB.deleteOpportunity(id).catch(function () {});
+      }
 
       this.init();
       App.renderOpportunities();
@@ -1083,6 +1120,9 @@ const Admin = {
     }
 
     localStorage.setItem("luxen_partners", JSON.stringify(partners));
+    if (window.ElevateDB && typeof ElevateDB.savePartner === "function") {
+      ElevateDB.savePartner(newPartner).catch(function () {});
+    }
     this.closePartnerModal();
     this.renderManagePartners();
     this.updateCounters();
@@ -1165,7 +1205,7 @@ const Admin = {
   },
 
   // إنشاء / إدارة حساب الشريك
-  partnerAccount(id) {
+  async partnerAccount(id) {
     let partners = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
     let partner = partners.find((p) => p.id == id);
     if (!partner) return;
@@ -1177,7 +1217,7 @@ const Admin = {
       const act = prompt(
         "حساب الشريك: " +
           existing.username +
-          "\n\naktb 1 لتغيير كلمة المرور\naktb 2 لحذف الحساب\naktb أي شيء آخر للإلغاء",
+          "\n\nاكتب 1 لتغيير كلمة المرور\nاكتب 2 لحذف الحساب\nاكتب أي شيء آخر للإلغاء",
         "1",
       );
       if (act === "1") {
@@ -1186,12 +1226,15 @@ const Admin = {
           alert("كلمة المرور قصيرة.");
           return;
         }
-        existing.password = np;
-        localStorage.setItem("luxen_all_users", JSON.stringify(users));
-        alert("تم تحديث كلمة المرور.");
+        const res = await ElevateSupabase.callAuthGateway("admin_update_user_password", {
+          userId: existing.id,
+          password: np,
+        });
+        alert(res && res.ok ? "تم تحديث كلمة المرور." : (res && res.error) || "تعذر التحديث.");
       } else if (act === "2") {
         users = users.filter((u) => !(u.isPartner && u.partnerId == id));
         localStorage.setItem("luxen_all_users", JSON.stringify(users));
+        await ElevateSupabase.callAuthGateway("admin_delete_user", { userId: existing.id }).catch(function () {});
         alert("تم حذف حساب الشريك.");
       }
       this.renderManagePartners();
@@ -1210,18 +1253,22 @@ const Admin = {
       return;
     }
 
-    users.push({
-      id: "ptr_" + Date.now(),
-      fullName: partner.name,
-      username: username,
-      email: username,
-      password: password,
-      isAdmin: false,
-      isPartner: true,
-      partnerId: id,
-      isActive: true,
-      join_date: new Date().toLocaleDateString("ar-EG"),
+    const res = await ElevateSupabase.callAuthGateway("admin_create_user", {
+      user: {
+        fullName: partner.name,
+        username: username,
+        email: username,
+        password: password,
+        isPartner: true,
+        partnerId: id,
+        isActive: true,
+      },
     });
+    if (!res || !res.ok || !res.user) {
+      alert((res && res.error) || "تعذر إنشاء حساب الشريك.");
+      return;
+    }
+    users.push(res.user);
     localStorage.setItem("luxen_all_users", JSON.stringify(users));
     alert("تم إنشاء حساب الشريك بنجاح.");
     this.renderManagePartners();
@@ -1233,6 +1280,9 @@ const Admin = {
     if (i < 0) return;
     partners[i].btnEnabled = !partners[i].btnEnabled;
     localStorage.setItem("luxen_partners", JSON.stringify(partners));
+    if (window.ElevateDB && typeof ElevateDB.savePartner === "function") {
+      ElevateDB.savePartner(partners[i]).catch(function () {});
+    }
     this.renderManagePartners();
     App.renderPartners();
   },
@@ -1242,6 +1292,9 @@ const Admin = {
       let partners = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
       partners = partners.filter((p) => p.id != id);
       localStorage.setItem("luxen_partners", JSON.stringify(partners));
+      if (window.ElevateDB && typeof ElevateDB.deletePartner === "function") {
+        ElevateDB.deletePartner(id).catch(function () {});
+      }
       this.renderManagePartners();
       this.updateCounters();
       App.renderPartners();
@@ -1309,9 +1362,11 @@ const Admin = {
       let comments = JSON.parse(localStorage.getItem("luxen_comments") || "[]");
       comments = comments.filter((c) => c.id != id);
       localStorage.setItem("luxen_comments", JSON.stringify(comments));
+      if (window.ElevateSupabase && typeof ElevateSupabase.deleteComment === "function") {
+        ElevateSupabase.deleteComment(id).catch(function () {});
+      }
       this.renderAdminComments();
 
-      // تحديث واجهة الفرصة في حال كانت مفتوحة
       const params = new URLSearchParams(window.location.search);
       const currentCardId = params.get("id");
       if (currentCardId) App.renderComments(currentCardId);
@@ -1375,6 +1430,9 @@ const Admin = {
         read: false,
       });
       localStorage.setItem("luxen_notifications", JSON.stringify(notifications));
+      if (window.ElevateSupabase && typeof ElevateSupabase.saveStoreKey === "function") {
+        ElevateSupabase.saveStoreKey("luxen_notifications", notifications).catch(function () {});
+      }
       if (window.App && typeof App.renderNotifications === "function") App.renderNotifications();
     } catch (e) {
       console.warn("auto notification failed", e);
@@ -1408,6 +1466,9 @@ const Admin = {
 
     notifications.push(newNotif);
     localStorage.setItem("luxen_notifications", JSON.stringify(notifications));
+    if (window.ElevateSupabase && typeof ElevateSupabase.saveStoreKey === "function") {
+      ElevateSupabase.saveStoreKey("luxen_notifications", notifications).catch(function () {});
+    }
 
     document.getElementById("adminNotificationModal").style.display = "none";
     alert("تم إرسال الإشعار لجميع الأعضاء بنجاح!");
@@ -2196,6 +2257,16 @@ const App = {
 
     localStorage.setItem("luxen_likes", JSON.stringify(likesData));
     this.renderLikes(id);
+    if (window.ElevateSupabase && typeof ElevateSupabase.recordEngagement === "function") {
+      ElevateSupabase.recordEngagement(
+        "opp_like",
+        id,
+        user.username,
+        user.name || user.username,
+        null,
+        true,
+      ).catch(function () {});
+    }
 
     // تحديث فوري إذا كان المدير فاتح المودال
     if (
@@ -2258,6 +2329,18 @@ const App = {
 
     comments.push(newComment);
     localStorage.setItem("luxen_comments", JSON.stringify(comments));
+    if (window.ElevateSupabase && typeof ElevateSupabase.addComment === "function") {
+      ElevateSupabase.addComment({
+        id: newComment.id,
+        scope: "opp",
+        itemId: id,
+        userId: user.id || null,
+        username: user.username,
+        displayName: newComment.name,
+        text: text,
+        dateLabel: newComment.date,
+      }).catch(function () {});
+    }
 
     input.value = "";
     this.renderComments(id);
@@ -2760,6 +2843,9 @@ const App = {
     localStorage.removeItem("ns_admin_token");
     localStorage.removeItem("ns_backup_token");
     localStorage.removeItem("ns_welcome");
+    if (window.ElevateSupabase && typeof ElevateSupabase.clearSession === "function") {
+      ElevateSupabase.clearSession();
+    }
     window.location.href = "index.html";
   },
 
@@ -3204,6 +3290,10 @@ const App = {
       }
     }
     localStorage.setItem("ns_saved_opps", JSON.stringify(saved));
+    const u = this.getUser();
+    if (u && u.id && window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.savePersonalData(u.id, "ns_saved_opps", saved).catch(function () {});
+    }
     this.renderSavedOpps();
     this.updateBookmarkIcons();
   },
@@ -3250,6 +3340,16 @@ const App = {
         t: Date.now(),
       });
       localStorage.setItem("luxen_views", JSON.stringify(views));
+      if (window.ElevateSupabase && typeof ElevateSupabase.recordEngagement === "function") {
+        ElevateSupabase.recordEngagement(
+          "opp_view",
+          cardId,
+          key,
+          (user && (user.name || user.username)) || "زائر",
+          null,
+          false,
+        ).catch(function () {});
+      }
     } catch (e) {}
   },
 
@@ -3918,73 +4018,42 @@ function authRequest(payload) {
   if (!window.ElevateSupabase) {
     return Promise.reject(new Error("قاعدة البيانات غير متاحة"));
   }
-  return Promise.resolve()
-    .then(async function () {
-      if (payload.action === "login") {
-        var user = await ElevateSupabase.findUser(payload.identifier);
-        if (!user) return { ok: false, data: { error: "اسم المستخدم أو الحساب غير موجود." } };
-        var valid = await ElevateSupabase.verifyPassword(
-          payload.password,
-          user.password_hash || user.password || "",
-        );
-        if (!valid) return { ok: false, data: { error: "كلمة المرور غير صحيحة." } };
-        return { ok: true, data: { user: user } };
+  return Promise.resolve().then(async function () {
+    if (payload.action === "login") {
+      var res = await ElevateSupabase.login(payload.identifier, payload.password, payload.twofa_code);
+      if (!res || !res.ok) {
+        return { ok: false, data: { error: (res && res.error) || "بيانات الدخول غير صحيحة." } };
       }
-
-      if (payload.action === "register") {
-        var checks = [ElevateSupabase.findUser(payload.username)];
-        if (payload.email) checks.push(ElevateSupabase.findUser(payload.email));
-        if (payload.phone) checks.push(ElevateSupabase.findUser(payload.phone));
-        var matches = await Promise.all(checks);
-        var existing = matches.find(Boolean);
-        if (existing) {
-          return { ok: false, data: { error: "اسم المستخدم أو البريد أو الهاتف مسجل مسبقًا." } };
-        }
-        var newUser = {
-          id: "usr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-          username: payload.username,
-          email: payload.email || "",
-          phone: payload.phone || "",
-          fullName: payload.fullName || payload.username,
-          password: payload.password,
-          isAdmin: false,
-          isTeacher: false,
-          isActive: true,
-          isOnline: true,
-          provider: "credentials",
-          join_date: new Date().toLocaleDateString("ar-EG"),
-          join_timestamp: Date.now()
-        };
-        var saved = await ElevateSupabase.saveUser(newUser);
-        return { ok: true, data: { user: saved } };
+      if (res.requires_2fa) {
+        return { ok: true, requires_2fa: true };
       }
+      return { ok: true, data: { user: res.user } };
+    }
 
-      if (payload.action === "google_login") {
-        var email = payload.email || "";
-        var googleUser = email ? await ElevateSupabase.findUser(email) : null;
-        if (!googleUser) {
-          googleUser = {
-            id: "usr_google_" + Date.now(),
-            username: (email.split("@")[0] || "google") + "_" + Math.random().toString(36).slice(2, 6),
-            email: email,
-            fullName: payload.fullName || "مستخدم Google",
-            password: "",
-            isAdmin: false,
-            isTeacher: false,
-            isActive: true,
-            isOnline: true,
-            provider: "google",
-            googleId: "google_" + Date.now(),
-            join_date: new Date().toLocaleDateString("ar-EG"),
-            join_timestamp: Date.now()
-          };
-          googleUser = await ElevateSupabase.saveUser(googleUser);
-        }
-        return { ok: true, data: { user: googleUser } };
+    if (payload.action === "register") {
+      var regRes = await ElevateSupabase.register({
+        username: payload.username,
+        email: payload.email || "",
+        phone: payload.phone || "",
+        fullName: payload.fullName || payload.username,
+        password: payload.password,
+      });
+      if (!regRes || !regRes.ok) {
+        return { ok: false, data: { error: (regRes && regRes.error) || "تعذر إنشاء الحساب." } };
       }
+      return { ok: true, data: { user: regRes.user } };
+    }
 
-      return Promise.reject(new Error("عملية مصادقة غير معروفة"));
-    });
+    if (payload.action === "google_login") {
+      var gRes = await ElevateSupabase.googleLogin(payload.credential || "");
+      if (!gRes || !gRes.ok) {
+        return { ok: false, data: { error: (gRes && gRes.error) || "تعذر تسجيل الدخول بـ Google." } };
+      }
+      return { ok: true, data: { user: gRes.user } };
+    }
+
+    return Promise.reject(new Error("عملية مصادقة غير معروفة"));
+  });
 }
 
 function handleLogin(event) {
@@ -4001,12 +4070,16 @@ function handleLogin(event) {
 
   authRequest({ action: "login", identifier: identifier, password: password })
     .then(function (res) {
+      if (res.requires_2fa) {
+        show2FAModalInScript({ identifier: identifier, password: password });
+        return;
+      }
       if (res.ok && res.data && res.data.user) {
         showAlert("تم تسجيل الدخول بنجاح! جاري توجيهك...", "info");
         startSession(res.data.user);
         return;
       }
-      fallbackLocalLogin(identifier, password);
+      showAlert((res.data && res.data.error) || "بيانات الدخول غير صحيحة.", "error");
     })
     .catch(function (err) {
       showAlert(
@@ -4018,67 +4091,8 @@ function handleLogin(event) {
     });
 }
 
-function fallbackLocalLogin(identifier, password) {
-  let users = [];
-  try {
-    users = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
-  } catch (e) {}
-
-  const idLower = (identifier || "").toLowerCase().trim();
-  const passLower = (password || "").trim().toLowerCase();
-
-  const isAdminId =
-    idLower === "admin" ||
-    idLower === "admin@elevate.com" ||
-    idLower === "admin@admin.com" ||
-    idLower === "01000000000" ||
-    idLower === "مدير" ||
-    idLower === "المدير" ||
-    idLower === "مسؤول";
-
-  const isAdminPass = [
-    "Elevate@Admin#2026", // ✅ كلمة مرور المدير الرسمية الجديدة
-    "elevate@admin#2026", // كلمة قديمة للتوافق
-  ].includes(password); // ✅ استخدام كلمة المرور كما هي بدون toLowerCase
-
-  if (isAdminId && isAdminPass) {
-    const adminUser = users.find((u) => u && u.isAdmin) || {
-      id: "admin_001",
-      username: "admin@elevate.com",
-      email: "admin@elevate.com",
-      fullName: "المدير العام",
-      phone: "01000000000",
-      isAdmin: true,
-      isActive: true,
-      isOnline: true,
-      adminToken: "adm_local_admin_master",
-    };
-    
-    // ✅ عرض نافذة 2FA للمدير
-    show2FAModalInScript(adminUser);
-    return;
-  }
-
-  const localUser = users.find(
-    (u) =>
-      u &&
-      ((u.username && u.username.toLowerCase() === idLower) ||
-        (u.email && u.email.toLowerCase() === idLower) ||
-        (u.phone && u.phone === identifier)) &&
-      u.password === password, // ✅ التحقق من كلمة المرور فقط
-  );
-
-  if (localUser) {
-    // ✅ التحقق: لو المستخدم مدير، اطلب 2FA
-    if (localUser.isAdmin) {
-      show2FAModalInScript(localUser);
-    } else {
-      // مستخدم عادي - دخول مباشر
-      startSession(localUser);
-    }
-  } else {
-    showAlert("بيانات الدخول غير صحيحة، يرجى التأكد وإعادة المحاولة.", "error");
-  }
+function fallbackLocalLogin() {
+  showAlert("يرجى الاتصال بالإنترنت لتسجيل الدخول بشكل آمن عبر الخادم.", "error");
 }
 
 function handleRegister(event) {
@@ -4161,33 +4175,21 @@ function fallbackLocalRegister(info) {
   startSession(newUser);
 }
 
-function handleForgotPassword(event) {
+async function handleForgotPassword(event) {
   event.preventDefault();
   const identifier = document.getElementById("loginIdentifier").value.trim();
   if (!identifier) {
     showAlert("يرجى كتابة اسم المستخدم في حقل النص أولًا لإرسال الطلب.", "error");
     return;
   }
-  // OFFLINE MODE: Password reset saved to localStorage for admin to handle
-  showAlert("جارٍ حفظ طلبك محلياً...", "info");
-  
+  showAlert("جارٍ إرسال الطلب للخادم...", "info");
   try {
-    let requests = JSON.parse(localStorage.getItem("luxen_reset_requests") || "[]");
-    const exists = requests.some(r => r.username === identifier && r.status === "pending");
-    
-    if (exists) {
-      showAlert("لديك طلب معلق بالفعل. يرجى انتظار المدير لمعالجته.", "info");
-      return;
+    const res = await ElevateSupabase.callAuthGateway("forgot_password", { identifier: identifier });
+    if (res && res.ok) {
+      showAlert(res.message || "تم حفظ طلبك بنجاح. سيقوم المدير بمعالجة الطلب قريباً.", "info");
+    } else {
+      showAlert((res && res.error) || "فشل حفظ الطلب. حاول مرة أخرى.", "error");
     }
-    
-    requests.push({
-      username: identifier,
-      status: "pending",
-      created_at: new Date().toISOString()
-    });
-    
-    localStorage.setItem("luxen_reset_requests", JSON.stringify(requests));
-    showAlert("تم حفظ طلبك بنجاح. سيقوم المدير بمعالجة الطلب قريباً.", "info");
   } catch (e) {
     showAlert("فشل حفظ الطلب. حاول مرة أخرى.", "error");
   }
@@ -4348,12 +4350,9 @@ try {
 // ==========================================
 const AdminSettings = {
   init() {
-    // عرض رمز 2FA الحالي
-    const current2FA = localStorage.getItem('admin_2fa_code') || '2026';
     const display = document.getElementById('current-2fa-display');
-    if (display) display.textContent = current2FA;
+    if (display) display.textContent = '•••• (محمي في الخادم)';
 
-    // عرض معلومات المدير
     try {
       const users = JSON.parse(localStorage.getItem('luxen_all_users') || '[]');
       const admin = users.find(u => u && u.isAdmin);
@@ -4361,109 +4360,75 @@ const AdminSettings = {
         const usernameEl = document.getElementById('admin-info-username');
         const emailEl = document.getElementById('admin-info-email');
         const phoneEl = document.getElementById('admin-info-phone');
-        
         if (usernameEl) usernameEl.textContent = admin.username || 'admin@elevate.com';
         if (emailEl) emailEl.textContent = admin.email || 'admin@elevate.com';
         if (phoneEl) phoneEl.textContent = admin.phone || '01000000000';
       }
-    } catch(e) {
-      console.error('Error loading admin info:', e);
-    }
+    } catch(e) {}
   },
 
-  changePassword(event) {
+  async changePassword(event) {
     event.preventDefault();
-    
     const currentPassword = document.getElementById('admin-current-password').value.trim();
     const newPassword = document.getElementById('admin-new-password').value.trim();
     const confirmPassword = document.getElementById('admin-confirm-password').value.trim();
     const statusEl = document.getElementById('password-change-status');
 
-    // التحقق من تطابق كلمة المرور الجديدة
     if (newPassword !== confirmPassword) {
       this.showStatus(statusEl, 'كلمة المرور الجديدة غير متطابقة!', 'error');
       return;
     }
-
-    // التحقق من طول كلمة المرور
     if (newPassword.length < 8) {
       this.showStatus(statusEl, 'كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل!', 'error');
       return;
     }
 
     try {
-      const users = JSON.parse(localStorage.getItem('luxen_all_users') || '[]');
-      const admin = users.find(u => u && u.isAdmin);
-
-      if (!admin) {
-        this.showStatus(statusEl, 'حساب المدير غير موجود!', 'error');
+      const res = await ElevateSupabase.callAuthGateway('change_admin_password', {
+        currentPassword,
+        newPassword
+      });
+      if (!res || !res.ok) {
+        this.showStatus(statusEl, (res && res.error) || 'كلمة المرور الحالية غير صحيحة!', 'error');
         return;
       }
-
-      // التحقق من كلمة المرور الحالية
-      if (admin.password !== currentPassword) {
-        this.showStatus(statusEl, 'كلمة المرور الحالية غير صحيحة!', 'error');
-        return;
-      }
-
-      // تحديث كلمة المرور
-      admin.password = newPassword;
-      localStorage.setItem('luxen_all_users', JSON.stringify(users));
-
-      // تحديث الجلسة الحالية
-      try {
-        const currentUser = JSON.parse(localStorage.getItem('ns_user') || 'null');
-        if (currentUser && currentUser.isAdmin) {
-          currentUser.password = newPassword;
-          localStorage.setItem('ns_user', JSON.stringify(currentUser));
-        }
-      } catch(e) {}
-
-      this.showStatus(statusEl, '✅ تم تحديث كلمة المرور بنجاح!', 'success');
+      this.showStatus(statusEl, '✅ تم تحديث كلمة المرور في الخادم بنجاح!', 'success');
       document.getElementById('admin-change-password-form').reset();
-
     } catch(e) {
-      console.error('Error changing password:', e);
       this.showStatus(statusEl, 'حدث خطأ في تحديث كلمة المرور!', 'error');
     }
   },
 
-  change2FA(event) {
+  async change2FA(event) {
     event.preventDefault();
-    
     const currentCode = document.getElementById('admin-current-2fa').value.trim();
     const newCode = document.getElementById('admin-new-2fa').value.trim();
     const confirmCode = document.getElementById('admin-confirm-2fa').value.trim();
     const statusEl = document.getElementById('twofa-change-status');
 
-    // التحقق من تطابق الرمز الجديد
     if (newCode !== confirmCode) {
       this.showStatus(statusEl, 'رمز التحقق الجديد غير متطابق!', 'error');
       return;
     }
-
-    // التحقق من أن الرمز 4 أرقام
     if (!/^\d{4}$/.test(newCode)) {
       this.showStatus(statusEl, 'رمز التحقق يجب أن يكون 4 أرقام فقط!', 'error');
       return;
     }
 
-    // التحقق من الرمز الحالي
-    const storedCode = localStorage.getItem('admin_2fa_code') || '2026';
-    if (currentCode !== storedCode) {
-      this.showStatus(statusEl, 'رمز التحقق الحالي غير صحيح!', 'error');
-      return;
+    try {
+      const res = await ElevateSupabase.callAuthGateway('change_2fa', {
+        currentCode,
+        newCode
+      });
+      if (!res || !res.ok) {
+        this.showStatus(statusEl, (res && res.error) || 'رمز التحقق الحالي غير صحيح!', 'error');
+        return;
+      }
+      this.showStatus(statusEl, '✅ تم تحديث رمز التحقق في الخادم بنجاح!', 'success');
+      document.getElementById('admin-change-2fa-form').reset();
+    } catch(e) {
+      this.showStatus(statusEl, 'حدث خطأ في تحديث رمز التحقق!', 'error');
     }
-
-    // تحديث الرمز
-    localStorage.setItem('admin_2fa_code', newCode);
-
-    // تحديث العرض
-    const display = document.getElementById('current-2fa-display');
-    if (display) display.textContent = newCode;
-
-    this.showStatus(statusEl, '✅ تم تحديث رمز التحقق بنجاح!', 'success');
-    document.getElementById('admin-change-2fa-form').reset();
   },
 
   showStatus(element, message, type) {
@@ -4555,15 +4520,14 @@ function show2FAModalInScript(adminUser) {
       </div>
       
       <div style="margin-bottom:20px;">
-        <input type="text" 
+        <input type="password" 
                id="twofa-code-input-script" 
                maxlength="4" 
                pattern="[0-9]*"
                inputmode="numeric"
-               placeholder="أدخل الرمز"
+               placeholder="••••"
                style="width:100%;padding:14px;font-size:1.5rem;font-weight:700;text-align:center;letter-spacing:8px;background:rgba(2,6,23,0.6);border:2px solid rgba(56,189,248,0.3);border-radius:12px;color:#fff;font-family:monospace;box-sizing:border-box;"
                autofocus>
-        <p style="margin:8px 0 0;font-size:0.8rem;color:#64748b;text-align:center;">💡 الرمز الافتراضي: <code style="background:rgba(56,189,248,0.1);padding:2px 8px;border-radius:6px;color:#38bdf8;">2026</code></p>
       </div>
 
       <div style="display:flex;gap:10px;">
@@ -4575,13 +4539,6 @@ function show2FAModalInScript(adminUser) {
                 style="flex:1;padding:13px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;color:#f87171;font-weight:700;cursor:pointer;font-size:1rem;font-family:inherit;">
           <i class="fas fa-times"></i> إلغاء
         </button>
-      </div>
-
-      <div style="margin-top:20px;padding:14px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);border-radius:10px;">
-        <p style="margin:0;font-size:0.82rem;color:#94a3b8;line-height:1.6;">
-          <i class="fas fa-info-circle" style="color:#38bdf8;margin-left:6px;"></i>
-          هذا الرمز مطلوب فقط لحسابات المدراء لحماية لوحة التحكم. الرمز الافتراضي: <strong style="color:#38bdf8;">2026</strong>
-        </p>
       </div>
     </div>
   `;
@@ -4620,39 +4577,33 @@ function show2FAModalInScript(adminUser) {
   });
 }
 
-function verify2FACodeInScript() {
+async function verify2FACodeInScript() {
   const input = document.getElementById('twofa-code-input-script');
   if (!input) return;
-  
   const code = input.value.trim();
-  const CORRECT_CODE = localStorage.getItem('admin_2fa_code') || '2026';
-  
-  if (code === CORRECT_CODE) {
-    // ✅ الرمز صحيح - تسجيل الدخول
-    const modal = document.getElementById('twofa-modal-script');
-    if (modal) modal.remove();
-    
-    if (typeof showAlert === 'function') {
-      showAlert("✅ تم التحقق بنجاح! جاري تحويلك لوحة التحكم...", "success");
-    }
-    
-    if (window.tempAdminUserScript) {
-      if (typeof startSession === 'function') {
-        startSession(window.tempAdminUserScript);
+  const creds = window.tempAdminUserScript;
+  if (!code || !creds) return;
+
+  try {
+    const res = await ElevateSupabase.login(creds.identifier, creds.password, code);
+    if (res && res.ok && res.user) {
+      const modal = document.getElementById('twofa-modal-script');
+      if (modal) modal.remove();
+      if (typeof showAlert === 'function') {
+        showAlert("✅ تم التحقق بنجاح! جاري تحويلك لوحة التحكم...", "success");
       }
+      if (typeof startSession === 'function') startSession(res.user);
       delete window.tempAdminUserScript;
+    } else {
+      if (typeof showAlert === 'function') {
+        showAlert((res && res.error) || "رمز التحقق غير صحيح! حاول مرة أخرى.", "error");
+      }
+      input.value = '';
+      input.style.borderColor = '#ef4444';
+      input.focus();
+      setTimeout(function() { input.style.borderColor = 'rgba(56,189,248,0.3)'; }, 1000);
     }
-  } else {
-    // ❌ الرمز خاطئ
-    if (typeof showAlert === 'function') {
-      showAlert("رمز التحقق غير صحيح! حاول مرة أخرى.", "error");
-    }
-    input.value = '';
-    input.style.borderColor = '#ef4444';
-    input.focus();
-    
-    setTimeout(function() {
-      input.style.borderColor = 'rgba(56,189,248,0.3)';
-    }, 1000);
+  } catch (e) {
+    if (typeof showAlert === 'function') showAlert("تعذر التحقق من الرمز.", "error");
   }
 }

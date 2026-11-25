@@ -403,15 +403,6 @@
             <i class="fa-solid fa-arrow-left"></i>
           </button>
         </form>
-
-        <div class="divider">
-          <span>أو المتابعة السريعة</span>
-        </div>
-
-        <button type="button" class="social-btn" onclick="showQuickEmailLogin()">
-          <i class="fas fa-envelope" style="color: #3b82f6; font-size: 1.1rem;"></i>
-          <span>دخول سريع بالبريد الإلكتروني</span>
-        </button>
       </div>
 
       <!-- Register Form -->
@@ -478,21 +469,12 @@
             <i class="fa-solid fa-user-plus"></i>
           </button>
         </form>
-
-        <div class="divider">
-          <span>أو التسجيل السريع</span>
-        </div>
-
-        <button type="button" class="social-btn" onclick="showQuickEmailLogin()">
-          <i class="fas fa-envelope" style="color: #3b82f6; font-size: 1.1rem;"></i>
-          <span>تسجيل سريع بالبريد الإلكتروني</span>
-        </button>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-client.js?v=auth-cloud-1"></script>
+  <script src="supabase-client.js?v=sec-2026"></script>
   <script src="admin-devices.js"></script>
   <script src="lockdown-system.js"></script>
   <script>
@@ -586,65 +568,31 @@
         return;
       }
 
-      showAlert("جاري التحقق من البيانات عبر قاعدة بيانات Supabase...", "info");
+      showAlert("جاري التحقق من البيانات...", "info");
       
       try {
         if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
-        let user = null;
-        if (window.ElevateSupabase && typeof ElevateSupabase.findUser === "function") {
-          user = await ElevateSupabase.findUser(identifier);
-        }
-
-        if (!user) {
-          showAlert("اسم المستخدم أو الحساب غير موجود.", "error");
+        const res = await ElevateSupabase.login(identifier, password);
+        if (!res || !res.ok) {
+          showAlert((res && res.error) || "بيانات الدخول غير صحيحة.", "error");
           return;
         }
-
-        // Verify password
-        let isValid = false;
-        if (window.ElevateSupabase) {
-          isValid = await ElevateSupabase.verifyPassword(password, user.password_hash || user.password);
-        } else {
-          isValid = (user.password === password || password === "elevate@admin#2026");
-        }
-
-        if (!isValid) {
-          showAlert("كلمة المرور غير صحيحة.", "error");
+        if (res.requires_2fa) {
+          show2FAModal({ identifier, password });
           return;
         }
-
-        const safeUser = {
-          id: user.id,
-          username: user.username,
-          email: user.email || "",
-          phone: user.phone || "",
-          fullName: user.full_name || user.fullName || user.username,
-          full_name: user.full_name || user.fullName || user.username,
-          isAdmin: Boolean(user.is_admin !== undefined ? user.is_admin : user.isAdmin),
-          isTeacher: Boolean(user.is_teacher !== undefined ? user.is_teacher : user.isTeacher),
-          teacherName: user.teacher_name || user.teacherName || "",
-          isActive: user.is_active !== undefined ? user.is_active : user.isActive,
-          avatar: user.avatar || "",
-          join_date: user.join_date || "",
-          join_timestamp: user.join_timestamp || Date.now()
-        };
-
-        // Check if admin - show 2FA
-        if (safeUser.isAdmin) {
-          safeUser.adminToken = "admin_token_" + Date.now();
-          show2FAModal(safeUser);
-        } else {
-          saveSessionAndRedirect(safeUser);
+        if (res.user) {
+          saveSessionAndRedirect(res.user);
         }
-        
       } catch(e) {
         console.error("Login error:", e);
         showAlert("حدث خطأ في تسجيل الدخول: " + (e.message || ""), "error");
       }
     }
 
-    // ✅ دالة عرض نافذة رمز التحقق للمدير (2FA)
-    function show2FAModal(user) {
+    function show2FAModal(creds) {
+      const existing = document.getElementById('twofa-modal');
+      if (existing) existing.remove();
       const modal = document.createElement('div');
       modal.id = 'twofa-modal';
       modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -660,19 +608,18 @@
           </div>
           
           <div style="margin-bottom:20px;">
-            <input type="text" 
+            <input type="password" 
                    id="twofa-code-input" 
                    maxlength="4" 
                    pattern="[0-9]*"
                    inputmode="numeric"
-                   placeholder="2026"
+                   placeholder="••••"
                    style="width:100%;padding:14px;font-size:1.5rem;font-weight:700;text-align:center;letter-spacing:8px;background:rgba(2,6,23,0.6);border:2px solid rgba(56,189,248,0.3);border-radius:12px;color:#fff;font-family:monospace;box-sizing:border-box;"
                    autofocus>
-            <p style="margin:8px 0 0;font-size:0.8rem;color:#64748b;text-align:center;">💡 الرمز الافتراضي: <code style="background:rgba(56,189,248,0.1);padding:2px 8px;border-radius:6px;color:#38bdf8;">2026</code></p>
           </div>
 
           <div style="display:flex;gap:10px;">
-            <button onclick="verify2FACode('${user.username}')" 
+            <button id="twofa-submit-btn" onclick="verify2FACode()" 
                     style="flex:1;padding:13px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;font-size:1rem;font-family:inherit;box-shadow:0 4px 12px rgba(16,185,129,0.3);">
               <i class="fas fa-check"></i> تحقق
             </button>
@@ -681,61 +628,52 @@
               <i class="fas fa-times"></i> إلغاء
             </button>
           </div>
-
-          <div style="margin-top:20px;padding:14px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);border-radius:10px;">
-            <p style="margin:0;font-size:0.82rem;color:#94a3b8;line-height:1.6;">
-              <i class="fas fa-info-circle" style="color:#38bdf8;margin-left:6px;"></i>
-              هذا الرمز مطلوب فقط لحسابات المدراء لحماية لوحة التحكم. راجع ملف <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;color:#e2e8f0;">CREDENTIALS.md</code> للحصول على الرمز.
-            </p>
-          </div>
         </div>
       `;
       
       document.body.appendChild(modal);
+      window._pendingAdminCreds = creds;
       
-      // تخزين بيانات المستخدم مؤقتاً
-      window.tempAdminUser = user;
-      
-      // التركيز على حقل الإدخال
       setTimeout(function() {
-        document.getElementById('twofa-code-input').focus();
+        var inp = document.getElementById('twofa-code-input');
+        if (inp) inp.focus();
       }, 100);
       
-      // دعم Enter للتحقق
       document.getElementById('twofa-code-input').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-          verify2FACode(user.username);
-        }
+        if (e.key === 'Enter') verify2FACode();
       });
     }
 
-    // ✅ دالة التحقق من الرمز
-    function verify2FACode(username) {
-      const code = document.getElementById('twofa-code-input').value.trim();
-      // Get stored 2FA code or use default
-      const CORRECT_CODE = localStorage.getItem('admin_2fa_code') || '2026'; // ✅ رمز التحقق
-      
-      if (code === CORRECT_CODE) {
-        // ✅ الرمز صحيح - تسجيل الدخول
-        const modal = document.getElementById('twofa-modal');
-        if (modal) modal.remove();
-        
-        showAlert("تم التحقق بنجاح! جاري تحويلك لوحة التحكم...", "success");
-        
-        if (window.tempAdminUser) {
-          saveSessionAndRedirect(window.tempAdminUser);
-          delete window.tempAdminUser;
+    async function verify2FACode() {
+      const inp = document.getElementById('twofa-code-input');
+      const code = inp ? inp.value.trim() : '';
+      const creds = window._pendingAdminCreds;
+      if (!code || !creds) return;
+
+      const btn = document.getElementById('twofa-submit-btn');
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await ElevateSupabase.login(creds.identifier, creds.password, code);
+        if (res && res.ok && res.user) {
+          const modal = document.getElementById('twofa-modal');
+          if (modal) modal.remove();
+          delete window._pendingAdminCreds;
+          showAlert("تم التحقق بنجاح! جاري تحويلك لوحة التحكم...", "success");
+          saveSessionAndRedirect(res.user);
+        } else {
+          showAlert((res && res.error) || "رمز التحقق غير صحيح! حاول مرة أخرى.", "error");
+          if (inp) {
+            inp.value = '';
+            inp.style.borderColor = '#ef4444';
+            inp.focus();
+            setTimeout(function() { inp.style.borderColor = 'rgba(56,189,248,0.3)'; }, 1000);
+          }
         }
-      } else {
-        // ❌ الرمز خاطئ
-        showAlert("رمز التحقق غير صحيح! حاول مرة أخرى.", "error");
-        document.getElementById('twofa-code-input').value = '';
-        document.getElementById('twofa-code-input').style.borderColor = '#ef4444';
-        document.getElementById('twofa-code-input').focus();
-        
-        setTimeout(function() {
-          document.getElementById('twofa-code-input').style.borderColor = 'rgba(56,189,248,0.3)';
-        }, 1000);
+      } catch (e) {
+        showAlert("تعذر التحقق من الرمز.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -761,7 +699,7 @@
         return;
       }
 
-      showAlert("جاري إنشاء الحساب وحفظه في قاعدة البيانات السحابية (Supabase)...", "info");
+      showAlert("جاري إنشاء الحساب وحفظه في قاعدة البيانات السحابية...", "info");
       var submitBtn = event.submitter || document.querySelector('#registerFormElement button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -771,48 +709,23 @@
 
       try {
         if (!window.ElevateSupabase) throw new Error("خدمة قاعدة البيانات غير متاحة.");
-        if (window.ElevateSupabase) {
-          const checks = [ElevateSupabase.findUser(username)];
-          if (email) checks.push(ElevateSupabase.findUser(email));
-          if (phone) checks.push(ElevateSupabase.findUser(phone));
-          const matches = await Promise.all(checks);
-          const existing = matches.find(Boolean);
-          if (existing) {
-            showAlert("اسم المستخدم أو البريد أو الهاتف مسجل مسبقاً في قاعدة البيانات.", "error");
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'إنشاء الحساب';
-            }
-            return;
-          }
-        }
-
-        const newUser = {
-          id: "usr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        const res = await ElevateSupabase.register({
+          fullName: fullName || username,
           username: username,
           email: email,
           phone: phone,
-          fullName: fullName || username,
-          full_name: fullName || username,
-          password: password,
-          isAdmin: false,
-          isTeacher: false,
-          isActive: true,
-          isOnline: true,
-          provider: "credentials",
-          join_date: new Date().toLocaleDateString("ar-EG"),
-          join_timestamp: Date.now()
-        };
-
-        // ☁ Save directly to Supabase
-        if (window.ElevateSupabase) {
-          await ElevateSupabase.saveUser(newUser);
-          console.log("☁ [Supabase] تم تسجيل وحفظ المستخدم الجديد في السحابة!");
+          password: password
+        });
+        if (!res || !res.ok || !res.user) {
+          showAlert((res && res.error) || "تعذر إنشاء الحساب.", "error");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = submitBtn.dataset.originalHtml || 'إنشاء الحساب';
+          }
+          return;
         }
-
         showAlert("تم إنشاء الحساب وحفظه سحابياً بنجاح!", "success");
-        saveSessionAndRedirect(newUser);
-        
+        saveSessionAndRedirect(res.user);
       } catch(e) {
         console.error("Register error:", e);
         showAlert("حدث خطأ في إنشاء الحساب: " + (e.message || ""), "error");
@@ -823,80 +736,6 @@
       }
     }
 
-    // تسجيل دخول سريع بالبريد فقط - بدون مشاكل!
-    function showQuickEmailLogin() {
-      const email = prompt('أدخل بريدك الإلكتروني للتسجيل السريع:');
-      
-      if (!email || !email.includes('@')) {
-        showAlert("❌ يرجى إدخال بريد إلكتروني صحيح", "error");
-        return;
-      }
-      
-      processQuickLogin(email);
-    }
-    
-    async function processQuickLogin(email) {
-      try {
-        showAlert("🚀 جاري إنشاء حسابك...", "info");
-        
-        const username = email.split('@')[0] + '_' + Math.floor(Math.random() * 1000);
-        
-        // Check if user exists
-        let user = null;
-        if (window.ElevateSupabase && typeof ElevateSupabase.findUserByEmail === 'function') {
-          user = await ElevateSupabase.findUserByEmail(email);
-        }
-        
-        if (!user) {
-          // Create new user
-          const newUser = {
-            username: username,
-            email: email,
-            full_name: email.split('@')[0],
-            phone: '',
-            password_hash: 'email_login_' + Date.now(),
-            is_admin: false,
-            is_teacher: false,
-            is_active: true,
-            join_date: new Date().toISOString().split('T')[0],
-            join_timestamp: Date.now()
-          };
-          
-          if (window.ElevateSupabase && typeof ElevateSupabase.createUser === 'function') {
-            await ElevateSupabase.createUser(newUser);
-          }
-          user = newUser;
-          showAlert("✅ تم إنشاء حسابك بنجاح!", "success");
-        } else {
-          showAlert("✅ مرحباً بعودتك!", "success");
-        }
-        
-        // Save session
-        const safeUser = {
-          id: user.id || Date.now(),
-          username: user.username,
-          email: user.email,
-          phone: user.phone || '',
-          fullName: user.full_name || user.username,
-          isAdmin: false,
-          isTeacher: false,
-          isActive: true
-        };
-        
-        localStorage.setItem("ns_user", JSON.stringify(safeUser));
-        localStorage.setItem("luxen_current_user", JSON.stringify(safeUser));
-        
-        // Redirect
-        setTimeout(function() {
-          window.location.href = "index.html";
-        }, 1000);
-        
-      } catch(e) {
-        console.error('Quick login error:', e);
-        showAlert("❌ حدث خطأ: " + e.message, "error");
-      }
-    }
-
     async function handleForgot(event) {
       event.preventDefault();
       const identifier = document.getElementById("loginIdentifier").value.trim();
@@ -904,20 +743,13 @@
         showAlert("اكتب اسم المستخدم أو بريدك في الحقل أولاً لطلب استعادة كلمة المرور.", "error");
         return;
       }
-      
       try {
-        const requests = JSON.parse(localStorage.getItem("luxen_reset_requests") || "[]");
-        requests.push({
-          identifier: identifier,
-          date: new Date().toLocaleDateString("ar-EG"),
-          timestamp: Date.now()
-        });
-        localStorage.setItem("luxen_reset_requests", JSON.stringify(requests));
-        if (window.ElevateSupabase) {
-          await ElevateSupabase.saveStoreKey("luxen_reset_requests", requests);
+        const res = await ElevateSupabase.callAuthGateway("forgot_password", { identifier: identifier });
+        if (res && res.ok) {
+          showAlert(res.message || "تم تسجيل طلبك سحابياً في قاعدة البيانات بنجاح.", "info");
+        } else {
+          showAlert((res && res.error) || "تعذر حفظ الطلب.", "error");
         }
-        
-        showAlert("تم تسجيل طلبك سحابياً في قاعدة البيانات بنجاح.", "info");
       } catch(e) {
         showAlert("تعذر حفظ الطلب.", "error");
       }

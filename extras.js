@@ -215,6 +215,9 @@
     if (!Array.isArray(list)) list = [];
     list.push(item);
     write(K_SUB, list);
+    if (window.ElevateSupabase && typeof ElevateSupabase.submitOpportunity === "function") {
+      ElevateSupabase.submitOpportunity(item).catch(function () {});
+    }
     f.reset();
     closeSubmit();
     alert("تم إرسال الفرصة للإدارة، شكرًا لك! سيتم مراجعتها قريبًا.");
@@ -245,6 +248,9 @@
     if (i > -1) v[id].splice(i, 1);
     else v[id].push({ u: me, n: voterName(), d: today() });
     write(K_VOTES, v);
+    if (window.ElevateSupabase && typeof ElevateSupabase.recordEngagement === "function") {
+      ElevateSupabase.recordEngagement("opp_vote", id, me, voterName(), null, true).catch(function () {});
+    }
     decorateCards();
     decorateDetail();
     renderAdminExtras();
@@ -301,6 +307,8 @@
     return s && typeof s === "object" && !Array.isArray(s) ? s : {};
   }
   function realUsersCount() {
+    var pub = read("elevate_public_stats", null);
+    if (pub && typeof pub.users_count === "number") return pub.users_count;
     var users = read("luxen_all_users", []);
     return Array.isArray(users)
       ? users.filter(function (u) {
@@ -327,6 +335,9 @@
     if (val === null) delete s.usersCount;
     else s.usersCount = val;
     write(K_SET, s);
+    if (window.ElevateSupabase && typeof ElevateSupabase.saveStoreKey === "function") {
+      ElevateSupabase.saveStoreKey(K_SET, s).catch(function () {});
+    }
     applyUsersCount();
     renderAdminExtras();
   }
@@ -539,7 +550,7 @@
     if (!it) return;
     var cards = read("luxen_general_cards", []);
     if (!Array.isArray(cards)) cards = [];
-    cards.push({
+    var newCard = {
       id: Date.now().toString(),
       type: it.type,
       category: it.category || "",
@@ -557,10 +568,17 @@
       status: "visible",
       partnerId: null,
       submittedBy: it.senderName || "",
-    });
+    };
+    cards.push(newCard);
     write("luxen_general_cards", cards);
+    if (window.ElevateDB && typeof ElevateDB.saveOpportunity === "function") {
+      ElevateDB.saveOpportunity(newCard).catch(function () {});
+    }
     it.status = "approved";
     write(K_SUB, list);
+    if (window.ElevateSupabase && typeof ElevateSupabase.updateSubmissionStatus === "function") {
+      ElevateSupabase.updateSubmissionStatus(subId, "approved", it).catch(function () {});
+    }
     try {
       if (window.App) {
         App.renderOpportunities();
@@ -584,6 +602,9 @@
         return x.id !== subId;
       }),
     );
+    if (window.ElevateSupabase && typeof ElevateSupabase.deleteSubmission === "function") {
+      ElevateSupabase.deleteSubmission(subId).catch(function () {});
+    }
     renderAdminExtras();
   }
 

@@ -761,14 +761,24 @@
 
     function handleConfirm() {
       var val = (input.value || '').trim();
-      if (val === 'omarayman') {
-        modal.remove();
-        startCountdown();
-      } else {
-        err.style.display = 'block';
-        input.style.borderColor = '#ef4444';
-        input.focus();
-      }
+      if (!val) return;
+      btn.disabled = true;
+      ElevateSupabase.callAuthGateway('verify_lockdown', { code: val })
+        .then(function (res) {
+          btn.disabled = false;
+          if (res && res.valid) {
+            modal.remove();
+            startCountdown();
+          } else {
+            err.style.display = 'block';
+            input.style.borderColor = '#ef4444';
+            input.focus();
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          err.style.display = 'block';
+        });
     }
 
     btn.addEventListener('click', handleConfirm);

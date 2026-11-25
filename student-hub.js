@@ -29,6 +29,16 @@
   function writeJSON(key, val) {
     try {
       localStorage.setItem(key, JSON.stringify(val));
+      var u = user();
+      if (
+        u &&
+        u.id &&
+        (key === REMIND_KEY || key === TRACK_KEY) &&
+        window.ElevateSupabase &&
+        ElevateSupabase.isAuthenticated()
+      ) {
+        ElevateSupabase.savePersonalData(u.id, key, val).catch(function () {});
+      }
     } catch (e) {}
   }
   function user() {

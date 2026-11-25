@@ -246,6 +246,9 @@
       }
       blocks[user.username] = myBlocks;
       localStorage.setItem("luxen_user_blocks", JSON.stringify(blocks));
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.recordEngagement("user_block", targetUser, user.username, user.fullName || user.username, null, true).catch(function () {});
+      }
       this.render();
     },
 
@@ -293,7 +296,7 @@
       const details = detailsEl ? detailsEl.value.trim() : "";
 
       const reports = JSON.parse(localStorage.getItem("luxen_user_reports") || "[]");
-      reports.unshift({
+      const rep = {
         id: "rep_" + Date.now(),
         reporter: user.username,
         reporterName: user.fullName || user.username,
@@ -302,8 +305,12 @@
         details: details,
         timestamp: Date.now(),
         status: "pending",
-      });
+      };
+      reports.unshift(rep);
       localStorage.setItem("luxen_user_reports", JSON.stringify(reports));
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.createModerationReport(rep.id, "report", rep).catch(function () {});
+      }
 
       const modal = document.getElementById("comm-report-modal");
       if (modal) modal.remove();
@@ -334,14 +341,16 @@
       }
       follows[currentUser.username] = myFollows;
       localStorage.setItem("luxen_user_follows", JSON.stringify(follows));
-
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.recordEngagement("user_follow", targetUsername, currentUser.username, currentUser.fullName || currentUser.username, null, true).catch(function () {});
+      }
       this.render();
     },
 
     // Log security violation to secret admin queue
     logViolation(violation) {
       const violations = JSON.parse(localStorage.getItem("luxen_flagged_violations") || "[]");
-      violations.unshift({
+      const vObj = {
         id: "violation_" + Date.now(),
         sender: violation.sender,
         senderName: violation.senderName,
@@ -350,8 +359,12 @@
         recipient: violation.recipient || "عام",
         reason: violation.reason,
         timestamp: Date.now(),
-      });
+      };
+      violations.unshift(vObj);
       localStorage.setItem("luxen_flagged_violations", JSON.stringify(violations.slice(0, 100)));
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.createModerationReport(vObj.id, "violation", vObj).catch(function () {});
+      }
     },
 
     // ==========================================
@@ -410,7 +423,8 @@
       }
 
       // Render Active Community Dashboard
-      const allUsers = JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
+      const dirUsers = JSON.parse(localStorage.getItem("luxen_member_directory") || "[]");
+      const allUsers = dirUsers.length ? dirUsers : JSON.parse(localStorage.getItem("luxen_all_users") || "[]");
       const partnersList = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
       const partnerUsernames = new Set(
         partnersList.map((p) => (p.username || "").toLowerCase()).filter(Boolean),
@@ -1050,10 +1064,24 @@
 
       if (isPrivate) {
         this.saveChatMessage(user.username, this.activeChatUser, newMsg);
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          ElevateSupabase.sendPrivateMessage(
+            Object.assign({}, newMsg, {
+              chatKey: this.getChatKey(user.username, this.activeChatUser),
+              senderId: user.id || user.username,
+              receiver: this.activeChatUser,
+            }),
+          ).catch(function () {});
+        }
       } else {
         const msgs = this.getPublicMessages();
         msgs.push(newMsg);
         this.savePublicMessages(msgs);
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          ElevateSupabase.sendCommunityMessage(
+            Object.assign({}, newMsg, { userId: user.id || user.username }),
+          ).catch(function () {});
+        }
       }
 
       if (input) input.value = "";
@@ -1074,10 +1102,16 @@
           chats[key] = chats[key].filter((m) => m.id !== msgId);
           this.savePrivateChats(chats);
         }
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          ElevateSupabase.deletePrivateMessage(msgId).catch(function () {});
+        }
       } else {
         let msgs = this.getPublicMessages();
         msgs = msgs.filter((m) => m.id !== msgId);
         this.savePublicMessages(msgs);
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          ElevateSupabase.deleteCommunityMessage(msgId).catch(function () {});
+        }
       }
 
       this.render();
@@ -1133,6 +1167,9 @@
         this.savePrivateChats(chats);
       } else {
         this.savePublicMessages(messages);
+      }
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.toggleMessageReaction(msgId, emoji, Boolean(isPrivate)).catch(function () {});
       }
 
       this.render();
@@ -1334,10 +1371,9 @@
 
   // ==========================================================================
   // Secret Master Admin Vault: Community, Private Chats, & User Reports Control
-  // Master Password: omaraymanaliluxentech
+  // Verified server-side via auth-gateway (app_private.admin_secrets)
   // ==========================================================================
   const CommunityAdmin = {
-    VAULT_PASSWORD: "omaraymanaliluxentech",
     activeTab: "community", // 'community' | 'private' | 'reports'
     selectedChatKey: null,
 
@@ -1345,14 +1381,20 @@
       return sessionStorage.getItem("luxen_vault_unlocked") === "true";
     },
 
-    unlock() {
+    async unlock() {
       const input = document.getElementById("admin-vault-input");
       const val = input ? input.value.trim() : "";
-      if (val === this.VAULT_PASSWORD) {
-        sessionStorage.setItem("luxen_vault_unlocked", "true");
-        this.render();
-      } else {
-        alert("كلمة المرور غير صحيحة! يرجى إدخال كلمة سر الخزينة السرية.");
+      if (!val) return;
+      try {
+        const res = await ElevateSupabase.callAuthGateway("verify_vault", { code: val });
+        if (res && res.valid) {
+          sessionStorage.setItem("luxen_vault_unlocked", "true");
+          this.render();
+        } else {
+          alert("كلمة المرور غير صحيحة! يرجى إدخال كلمة سر الخزينة السرية.");
+        }
+      } catch (e) {
+        alert("تعذر التحقق من كلمة السر.");
       }
     },
 
@@ -1705,6 +1747,9 @@
         alert("تم تجميد الشات بنجاح ومنع المستخدمين من إرسال أي رسائل.");
       }
       localStorage.setItem("luxen_frozen_chats", JSON.stringify(frozen));
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.recordEngagement("chat_freeze", key, "admin", "admin", null, true).catch(function () {});
+      }
       this.render();
     },
 
@@ -1713,6 +1758,9 @@
       let msgs = Community.getPublicMessages();
       msgs = msgs.filter((m) => m.id !== msgId);
       Community.savePublicMessages(msgs);
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.deleteCommunityMessage(msgId).catch(function () {});
+      }
       this.render();
     },
 
@@ -1724,6 +1772,9 @@
       if (newText !== null && newText.trim()) {
         m.text = newText.trim();
         Community.savePublicMessages(msgs);
+        if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+          ElevateSupabase.updateCommunityMessage(msgId, m.text).catch(function () {});
+        }
         this.render();
       }
     },
@@ -1735,12 +1786,18 @@
         chats[chatKey] = chats[chatKey].filter((m) => m.id !== msgId);
         Community.savePrivateChats(chats);
       }
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.deletePrivateMessage(msgId).catch(function () {});
+      }
       this.render();
     },
 
     banUser(username) {
       if (!confirm(`هل أنت متأكد من طرد وحظر العضو (@${username}) نهائياً من المجتمع؟`)) return;
       Community.toggleBanUser(username);
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.recordEngagement("user_ban", username, "admin", "admin", null, true).catch(function () {});
+      }
       alert(`تم حظر العضو (@${username}) وطرد حسابه نهائياً من مجتمع المنصة.`);
       this.render();
     },
@@ -1749,6 +1806,9 @@
       let reports = JSON.parse(localStorage.getItem("luxen_user_reports") || "[]");
       reports = reports.filter((r) => r.id !== repId);
       localStorage.setItem("luxen_user_reports", JSON.stringify(reports));
+      if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+        ElevateSupabase.deleteModerationReport(repId).catch(function () {});
+      }
       alert("تم إغلاق البلاغ بنجاح.");
       this.render();
     },

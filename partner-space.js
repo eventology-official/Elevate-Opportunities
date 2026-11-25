@@ -111,6 +111,9 @@
     if (i < 0) return false;
     all[i] = Object.assign({}, all[i], { socials: list });
     write("luxen_partners", all);
+    if (window.ElevateDB && typeof ElevateDB.savePartner === "function") {
+      ElevateDB.savePartner(all[i]).catch(function () {});
+    }
     return true;
   }
 

@@ -1,74 +1,28 @@
 /**
- * =====================================================================
- * Elevate Platform — Enterprise Ultra-Fast Cloud Synchronizer
- * =====================================================================
- * - شحن فوري لحظي في 0 ملي ثانية (Instant Local-First Render)
- * - جلب متوازي فائق السرعة من السحابة في الخلفية (Background Revalidation)
- * - دمج ذكي للبيانات (Smart Non-Destructive Merge) يمنع ضياع أي بيانات مضافة
- * - مزامنة لحظية فورية عبر الـ WebSockets بدون تأخير
- * =====================================================================
+ * Elevate Platform — Cloud Synchronizer & Realtime Engine
+ * - Normalized Postgres tables are the single source of truth.
+ * - Zero double-write overwrites on users; personal data & engagements hydrate
+ *   cleanly per authenticated user.
+ * - Real-time WebSocket updates via Supabase Realtime.
  */
-
 (function () {
-  'use strict';
+  "use strict";
 
-  console.log("🚀 [Elevate] تشغيل المحرك السحابي الفوري (Ultra-Fast Engine)...");
-
-  var SYNCED_KEYS = [
-    "luxen_general_cards",
-    "luxen_partners",
-    "luxen_comments",
+  var SYNCED_STORE_KEYS = [
     "luxen_notifications",
-    "luxen_courses",
-    "luxen_course_comments",
-    "luxen_community_messages",
-    "luxen_private_chats",
     "luxen_faq",
-    "luxen_submissions",
-    "luxen_app_installs",
-    "luxen_qna",
-    "luxen_reset_requests",
-    "luxen_course_bookmarks",
-    "luxen_course_subscriptions",
-    "luxen_likes",
-    "luxen_views",
-    "luxen_votes",
+    "luxen_faq_removed",
     "luxen_settings",
     "luxen_category_status",
-    "luxen_live_joins",
-    "luxen_video_likes",
-    "luxen_video_views",
-    "luxen_course_likes",
+    "luxen_contests_visibility",
     "luxen_lockdown_status",
-    "luxen_suggested_opportunities",
-    "luxen_deleted_teachers",
-    "luxen_user_follows"
+    "elevate_element_visibility",
   ];
 
   var isCloudReady = false;
   var readyCallbacks = [];
-  var saveDebounceTimers = {};
   var originalSetItem = localStorage.setItem.bind(localStorage);
 
-  // Smart non-destructive merge to protect newly added items
-  function smartMergeArray(localArr, cloudArr) {
-    if (!Array.isArray(localArr)) localArr = [];
-    if (!Array.isArray(cloudArr)) cloudArr = [];
-    var map = {};
-    // Add cloud items
-    cloudArr.forEach(function (item) {
-      if (item && item.id) map[String(item.id)] = item;
-    });
-    // Overlay local items (preserves newly created items not yet returned by cloud)
-    localArr.forEach(function (item) {
-      if (item && item.id) {
-        map[String(item.id)] = Object.assign({}, map[String(item.id)] || {}, item);
-      }
-    });
-    return Object.values(map);
-  }
-
-  // Instant re-render of all UI components (0ms latency)
   function rerenderAll() {
     try {
       if (window.App) {
@@ -76,25 +30,141 @@
         if (typeof App.renderPartners === "function") App.renderPartners();
         if (typeof App.renderOpportunities === "function") App.renderOpportunities();
         if (typeof App.updateHomeStats === "function") App.updateHomeStats();
+        if (typeof App.renderNotifications === "function") App.renderNotifications();
       }
       if (window.Admin) {
         if (typeof Admin.updateCounters === "function") Admin.updateCounters();
         if (typeof Admin.renderManagePartners === "function") Admin.renderManagePartners();
         if (typeof Admin.renderManageList === "function") Admin.renderManageList();
         if (typeof Admin.renderMembers === "function") Admin.renderMembers();
+        if (typeof Admin.renderTeam === "function") Admin.renderTeam();
       }
-      if (window.ElevateFilters && typeof ElevateFilters.apply === "function") ElevateFilters.apply();
       if (window.ElevateFAQ && typeof ElevateFAQ.refresh === "function") ElevateFAQ.refresh();
       if (window.StudentHub && typeof StudentHub.refresh === "function") StudentHub.refresh();
       if (window.ElevateExtras && typeof ElevateExtras.refresh === "function") ElevateExtras.refresh();
       if (window.CoursesApp && typeof CoursesApp.render === "function") CoursesApp.render();
-      if (window.CommunityApp && typeof CommunityApp.render === "function") CommunityApp.render();
+      if (window.Community && typeof Community.render === "function") Community.render();
+      if (window.ElevateResets && typeof ElevateResets.render === "function") ElevateResets.render();
     } catch (e) {
-      console.warn("[Elevate] Rerender notice:", e);
+      console.warn("[ElevateDB] Rerender notice:", e);
     }
   }
 
-  // Ultra-fast background synchronization
+  function hydrateEngagements(rows) {
+    var likes = {};
+    var views = {};
+    var votes = {};
+    var courseLikes = {};
+    var videoLikes = {};
+    var videoViews = {};
+    var liveJoins = {};
+    var follows = {};
+    var blocks = {};
+    var frozen = [];
+    var banned = [];
+    var installs = [];
+
+    (rows || []).forEach(function (r) {
+      if (!r || !r.kind) return;
+      if (r.kind === "opp_like") {
+        if (!likes[r.item_id]) likes[r.item_id] = [];
+        likes[r.item_id].push(r.actor_id);
+      } else if (r.kind === "opp_view") {
+        if (!views[r.item_id]) views[r.item_id] = [];
+        views[r.item_id].push({ u: r.actor_id, n: r.actor_name || "زائر", t: Date.parse(r.created_at) || Date.now() });
+      } else if (r.kind === "opp_vote") {
+        if (!votes[r.item_id]) votes[r.item_id] = [];
+        votes[r.item_id].push({ u: r.actor_id, n: r.actor_name || "زائر", d: (r.created_at || "").slice(0, 10) });
+      } else if (r.kind === "course_like") {
+        if (!courseLikes[r.item_id]) courseLikes[r.item_id] = [];
+        courseLikes[r.item_id].push(r.actor_id);
+      } else if (r.kind === "video_like") {
+        if (!videoLikes[r.item_id]) videoLikes[r.item_id] = [];
+        videoLikes[r.item_id].push(r.actor_id);
+      } else if (r.kind === "video_view") {
+        if (!videoViews[r.item_id]) videoViews[r.item_id] = [];
+        videoViews[r.item_id].push({ u: r.actor_id, n: r.actor_name || "زائر" });
+      } else if (r.kind === "live_join") {
+        if (!liveJoins[r.item_id]) liveJoins[r.item_id] = [];
+        liveJoins[r.item_id].push({ u: r.actor_id, n: r.actor_name || "زائر" });
+      } else if (r.kind === "user_follow") {
+        if (!follows[r.actor_id]) follows[r.actor_id] = [];
+        follows[r.actor_id].push(r.item_id);
+      } else if (r.kind === "user_block") {
+        if (!blocks[r.actor_id]) blocks[r.actor_id] = [];
+        blocks[r.actor_id].push(r.item_id);
+      } else if (r.kind === "chat_freeze") {
+        frozen.push(r.item_id);
+      } else if (r.kind === "user_ban") {
+        banned.push(r.item_id);
+      } else if (r.kind === "app_install") {
+        installs.push({ id: r.actor_id, t: Date.parse(r.created_at) || Date.now() });
+      }
+    });
+
+    originalSetItem("luxen_likes", JSON.stringify(likes));
+    originalSetItem("luxen_views", JSON.stringify(views));
+    originalSetItem("luxen_votes", JSON.stringify(votes));
+    originalSetItem("luxen_course_likes", JSON.stringify(courseLikes));
+    originalSetItem("luxen_video_likes", JSON.stringify(videoLikes));
+    originalSetItem("luxen_video_views", JSON.stringify(videoViews));
+    originalSetItem("luxen_live_joins", JSON.stringify(liveJoins));
+    originalSetItem("luxen_user_follows", JSON.stringify(follows));
+    originalSetItem("luxen_user_blocks", JSON.stringify(blocks));
+    originalSetItem("luxen_frozen_chats", JSON.stringify(frozen));
+    originalSetItem("luxen_banned_community_users", JSON.stringify(banned));
+    originalSetItem("luxen_app_installs", JSON.stringify(installs));
+  }
+
+  function hydrateComments(rows) {
+    var oppComments = [];
+    var courseComments = [];
+    var videoComments = {};
+    var liveComments = {};
+    var qna = [];
+
+    (rows || []).forEach(function (c) {
+      if (!c) return;
+      if (c.scope === "opp") {
+        oppComments.push({
+          id: c.id,
+          cardId: c.item_id,
+          username: c.username,
+          name: c.display_name,
+          text: c.text,
+          date: c.date_label || new Date(c.created_at).toLocaleString("ar-EG"),
+        });
+      } else if (c.scope === "course") {
+        courseComments.push({
+          id: c.id,
+          courseId: c.item_id,
+          author: c.display_name || c.username,
+          text: c.text,
+          time: c.date_label || new Date(c.created_at).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+        });
+      } else if (c.scope === "video") {
+        if (!videoComments[c.item_id]) videoComments[c.item_id] = [];
+        videoComments[c.item_id].push({ id: c.id, author: c.display_name, text: c.text, date: c.date_label || "" });
+      } else if (c.scope === "live") {
+        if (!liveComments[c.item_id]) liveComments[c.item_id] = [];
+        liveComments[c.item_id].push({ id: c.id, author: c.display_name, text: c.text, date: c.date_label || "" });
+      } else if (c.scope === "qna") {
+        try {
+          var parsed = JSON.parse(c.text);
+          qna.push(parsed);
+        } catch (e) {
+          qna.push({ id: c.id, text: c.text, author: c.display_name, topic: c.item_id, answers: [], date: c.date_label || "" });
+        }
+      }
+    });
+
+    originalSetItem("luxen_comments", JSON.stringify(oppComments));
+    originalSetItem("luxen_course_comments", JSON.stringify(courseComments));
+    originalSetItem("luxen_video_comments", JSON.stringify(videoComments));
+    originalSetItem("luxen_live_comments", JSON.stringify(liveComments));
+    if (qna.length) originalSetItem("luxen_qna", JSON.stringify(qna));
+  }
+
   async function syncFromCloud() {
     if (!window.ElevateSupabase) {
       setTimeout(syncFromCloud, 80);
@@ -102,73 +172,201 @@
     }
 
     try {
-      // 1. Fetch site_store + users in parallel (single round-trip bundle)
-      var storePromise = window.ElevateSupabase.fetchStore();
-      var usersPromise = window.ElevateSupabase.fetchUsers();
-      var oppsPromise = window.ElevateSupabase.fetchOpportunities({ limit: 100 });
-      var partnersPromise = window.ElevateSupabase.fetchPartners();
+      var results = await Promise.all([
+        ElevateSupabase.fetchStore(),
+        ElevateSupabase.fetchOpportunities({ limit: 200 }),
+        ElevateSupabase.fetchCourses(),
+        ElevateSupabase.fetchPartners(),
+        ElevateSupabase.fetchCommunityMessages(100),
+        ElevateSupabase.fetchComments(),
+        ElevateSupabase.fetchEngagements(),
+        ElevateSupabase.getPublicStats(),
+      ]);
 
-      var results = await Promise.all([storePromise, usersPromise, oppsPromise, partnersPromise]);
       var storeData = results[0] || {};
-      var usersData = results[1] || [];
-      var cloudOpps = results[2] || [];
-      var cloudPartners = results[3] || [];
+      var cloudOpps = results[1];
+      var cloudCourses = results[2];
+      var cloudPartners = results[3];
+      var commMsgs = results[4] || [];
+      var allComments = results[5] || [];
+      var allEngagements = results[6] || [];
+      var publicStats = results[7];
 
-      // 1. Opportunities Merge
-      var localOpps = [];
-      try { localOpps = JSON.parse(localStorage.getItem("luxen_general_cards") || "[]"); } catch (e) {}
-      var finalOpps = smartMergeArray(localOpps, cloudOpps.length > 0 ? cloudOpps : (storeData.luxen_general_cards || []));
-      originalSetItem("luxen_general_cards", JSON.stringify(finalOpps));
+      if (Array.isArray(cloudOpps)) {
+        originalSetItem("luxen_general_cards", JSON.stringify(cloudOpps));
+      }
+      if (Array.isArray(cloudCourses)) {
+        originalSetItem("luxen_courses", JSON.stringify(cloudCourses));
+      }
+      if (Array.isArray(cloudPartners)) {
+        originalSetItem("luxen_partners", JSON.stringify(cloudPartners));
+      }
 
-      // 2. Partners Merge (guarantees newly added partners are NEVER wiped)
-      var localPartners = [];
-      try { localPartners = JSON.parse(localStorage.getItem("luxen_partners") || "[]"); } catch (e) {}
-      var finalPartners = smartMergeArray(localPartners, cloudPartners.length > 0 ? cloudPartners : (storeData.luxen_partners || []));
-      originalSetItem("luxen_partners", JSON.stringify(finalPartners));
+      if (Array.isArray(commMsgs)) {
+        var mappedComm = commMsgs.map(function (m) {
+          return {
+            id: m.id,
+            sender: m.sender_username || m.user_name || "user",
+            senderName: m.sender_name || m.user_name || "عضو",
+            role: m.role || "member",
+            roleTitle: m.role_title || null,
+            text: m.content || "",
+            type: m.msg_type || "text",
+            mediaUrl: m.media_url || null,
+            replyTo: m.reply_to || null,
+            reactions: m.reactions || {},
+            timestamp: m.timestamp || Date.parse(m.created_at) || Date.now(),
+          };
+        });
+        originalSetItem("luxen_community_messages", JSON.stringify(mappedComm));
+      }
 
-      // 3. Courses Merge
-      var localCourses = [];
-      try { localCourses = JSON.parse(localStorage.getItem("luxen_courses") || "[]"); } catch (e) {}
-      var finalCourses = smartMergeArray(localCourses, storeData.luxen_courses || []);
-      originalSetItem("luxen_courses", JSON.stringify(finalCourses));
+      hydrateComments(allComments);
+      hydrateEngagements(allEngagements);
 
-      // 4. Site Store keys
+      if (publicStats) {
+        originalSetItem("elevate_public_stats", JSON.stringify(publicStats));
+      }
+
+      // Sync safe config keys from site_store
       for (var k in storeData) {
-        if (Object.prototype.hasOwnProperty.call(storeData, k)) {
-          if (k !== "luxen_general_cards" && k !== "luxen_partners" && k !== "luxen_courses") {
-            var valStr = typeof storeData[k] === "string" ? storeData[k] : JSON.stringify(storeData[k]);
-            originalSetItem(k, valStr);
-          }
+        if (Object.prototype.hasOwnProperty.call(storeData, k) && SYNCED_STORE_KEYS.indexOf(k) !== -1) {
+          var valStr = typeof storeData[k] === "string" ? storeData[k] : JSON.stringify(storeData[k]);
+          originalSetItem(k, valStr);
         }
       }
 
-      // 5. Users
-      if (Array.isArray(usersData) && usersData.length > 0) {
-        var mappedUsers = usersData.map(function (u) {
+      // Authenticated user data
+      if (ElevateSupabase.isAuthenticated()) {
+        var curUser = null;
+        try {
+          curUser = JSON.parse(localStorage.getItem("ns_user") || "null");
+        } catch (e) {}
+
+        var authPromises = [
+          ElevateSupabase.getMemberDirectory(),
+          ElevateSupabase.fetchPrivateMessages(),
+          ElevateSupabase.fetchCourseSubscriptions(),
+          ElevateSupabase.fetchPersonalData(),
+        ];
+
+        var isAdmin = !!(curUser && curUser.isAdmin);
+        if (isAdmin) {
+          authPromises.push(ElevateSupabase.fetchUsers());
+          authPromises.push(ElevateSupabase.fetchSubmissions());
+          authPromises.push(ElevateSupabase.fetchResetRequests());
+          authPromises.push(ElevateSupabase.fetchModerationReports());
+          authPromises.push(ElevateSupabase.fetchAdminDevices());
+        }
+
+        var authRes = await Promise.all(authPromises);
+        var directory = authRes[0] || [];
+        var privRows = authRes[1] || [];
+        var subsRows = authRes[2] || [];
+        var personalRows = authRes[3] || [];
+
+        originalSetItem("luxen_member_directory", JSON.stringify(directory));
+
+        var privGrouped = {};
+        privRows.forEach(function (pm) {
+          if (!privGrouped[pm.chat_key]) privGrouped[pm.chat_key] = [];
+          privGrouped[pm.chat_key].push({
+            id: pm.id,
+            sender: pm.sender_username,
+            senderName: pm.sender_name || pm.sender_username,
+            receiver: pm.receiver_username,
+            text: pm.text || "",
+            type: pm.msg_type || "text",
+            mediaUrl: pm.media_url || null,
+            replyTo: pm.reply_to || null,
+            reactions: pm.reactions || {},
+            timestamp: pm.timestamp || Date.parse(pm.created_at) || Date.now(),
+          });
+        });
+        originalSetItem("luxen_private_chats", JSON.stringify(privGrouped));
+
+        var mappedSubs = subsRows.map(function (s) {
           return {
-            id: u.id,
-            username: u.username,
-            email: u.email || "",
-            phone: u.phone || "",
-            fullName: u.full_name || u.username,
-            full_name: u.full_name || u.username,
-            password_hash: u.password_hash || "",
-            passwordHash: u.password_hash || "",
-            isAdmin: Boolean(u.is_admin),
-            isTeacher: Boolean(u.is_teacher),
-            teacherName: u.teacher_name || u.full_name,
-            isActive: Boolean(u.is_active),
-            isOnline: Boolean(u.is_online),
-            provider: u.provider || "credentials",
-            googleId: u.google_id || "",
-            avatar: u.avatar || "",
-            join_date: u.join_date || "",
-            join_timestamp: u.join_timestamp || Date.now(),
-            last_login: u.last_login || Date.now(),
-            metadata: u.metadata || {}
+            id: s.id,
+            courseId: s.course_id,
+            courseTitle: s.course_title,
+            identifier: s.identifier,
+            activatedAt: s.activated_at,
+            activatedBy: s.activated_by,
           };
         });
-        originalSetItem("luxen_all_users", JSON.stringify(mappedUsers));
+        originalSetItem("luxen_course_subscriptions", JSON.stringify(mappedSubs));
+
+        personalRows.forEach(function (pr) {
+          if (pr && pr.key) {
+            originalSetItem(pr.key, JSON.stringify(pr.value));
+          }
+        });
+
+        if (isAdmin) {
+          var usersRows = authRes[4] || [];
+          var mappedUsers = usersRows.map(function (u) {
+            return Object.assign({}, u.metadata || {}, {
+              id: u.id,
+              username: u.username,
+              email: u.email || "",
+              phone: u.phone || "",
+              fullName: u.full_name || u.username,
+              full_name: u.full_name || u.username,
+              isAdmin: Boolean(u.is_admin),
+              isTeam: Boolean(u.is_team),
+              isTeacher: Boolean(u.is_teacher),
+              isPartner: Boolean(u.is_partner),
+              teacherName: u.teacher_name || u.full_name,
+              partnerId: u.partner_id || null,
+              customRoleTitle: u.custom_role_title || null,
+              perms: Array.isArray(u.perms) ? u.perms : [],
+              isActive: u.is_active !== false,
+              isOnline: Boolean(u.is_online),
+              provider: u.provider || "credentials",
+              avatar: u.avatar || "",
+              join_date: u.join_date || "",
+              join_timestamp: u.join_timestamp || 0,
+              last_login: u.last_login || 0,
+            });
+          });
+          originalSetItem("luxen_all_users", JSON.stringify(mappedUsers));
+
+          var subRows = authRes[5] || [];
+          originalSetItem(
+            "luxen_submissions",
+            JSON.stringify(
+              subRows.map(function (s) {
+                return Object.assign({}, s.data || {}, { id: s.id, status: s.status });
+              }),
+            ),
+          );
+
+          var resetRows = authRes[6] || [];
+          originalSetItem("luxen_reset_requests", JSON.stringify(resetRows));
+
+          var repRows = authRes[7] || [];
+          var reports = [];
+          var violations = [];
+          repRows.forEach(function (r) {
+            if (r.kind === "violation") violations.push(Object.assign({}, r.data || {}, { id: r.id }));
+            else reports.push(Object.assign({}, r.data || {}, { id: r.id }));
+          });
+          originalSetItem("luxen_user_reports", JSON.stringify(reports));
+          originalSetItem("luxen_flagged_violations", JSON.stringify(violations));
+
+          var devRows = authRes[8] || [];
+          if (devRows.length) {
+            originalSetItem(
+              "elevate_admin_devices",
+              JSON.stringify(
+                devRows.map(function (d) {
+                  return Object.assign({}, d.data || {}, { id: d.id });
+                }),
+              ),
+            );
+          }
+        }
       }
 
       isCloudReady = true;
@@ -177,162 +375,203 @@
 
       while (readyCallbacks.length > 0) {
         var cb = readyCallbacks.shift();
-        try { cb(); } catch (e) {}
+        try {
+          cb();
+        } catch (e) {}
       }
 
-      // Re-render with verified cloud data
       rerenderAll();
       setupRealtime();
-
-      console.log("✔ [Elevate] المزامنة السحابية مكتملة (شركاء: " + finalPartners.length + "، فرص: " + finalOpps.length + ")");
     } catch (err) {
-      console.error("✖ [Elevate] خطأ في المزامنة السحابية:", err);
+      console.error("[ElevateDB] Cloud sync error:", err);
       isCloudReady = true;
       rerenderAll();
     }
   }
 
-  // Fast background cloud queue
-  function queueCloudSave(key, rawValue) {
-    if (!window.ElevateSupabase) return;
-    if (saveDebounceTimers[key]) clearTimeout(saveDebounceTimers[key]);
-
-    saveDebounceTimers[key] = setTimeout(async function () {
-      try {
-        var parsed = rawValue;
-        try { parsed = JSON.parse(rawValue); } catch (e) {}
-
-        // 1. Direct row save in dedicated tables
-        if (key === "luxen_partners" && Array.isArray(parsed)) {
-          parsed.forEach(function (p) {
-            if (p && p.id) window.ElevateSupabase.savePartner(p).catch(function () {});
-          });
-        } else if (key === "luxen_general_cards" && Array.isArray(parsed)) {
-          parsed.forEach(function (c) {
-            if (c && c.id) window.ElevateSupabase.saveOpportunity(c).catch(function () {});
-          });
-        }
-
-        // 2. Save in site_store key
-        await window.ElevateSupabase.saveStoreKey(key, parsed);
-      } catch (err) {
-        console.warn("[Elevate] خطأ في الحفظ السحابي للمفتاح:", key, err);
-      }
-    }, 150);
-  }
-
-  // Intercept localStorage.setItem
-  localStorage.setItem = function (key, value) {
-    originalSetItem(key, value);
-    if (key && (key.startsWith("luxen_") || SYNCED_KEYS.indexOf(key) !== -1)) {
-      queueCloudSave(key, value);
-    }
-  };
-
-  // Real-time synchronization
+  var realtimeChannel = null;
   function setupRealtime() {
-    if (!window.ElevateSupabase || !window.ElevateSupabase.client) return;
+    if (realtimeChannel || !window.ElevateSupabase || !window.ElevateSupabase.client) return;
     try {
       var client = window.ElevateSupabase.client;
-      client
-        .channel('elevate-fast-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'partners' }, async function () {
-          var pts = await window.ElevateSupabase.fetchPartners();
+      realtimeChannel = client
+        .channel("elevate-live-sync")
+        .on("postgres_changes", { event: "*", schema: "public", table: "partners" }, async function () {
+          var pts = await ElevateSupabase.fetchPartners();
           if (Array.isArray(pts)) {
             originalSetItem("luxen_partners", JSON.stringify(pts));
             rerenderAll();
           }
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'opportunities' }, async function () {
-          var opps = await window.ElevateSupabase.fetchOpportunities();
+        .on("postgres_changes", { event: "*", schema: "public", table: "opportunities" }, async function () {
+          var opps = await ElevateSupabase.fetchOpportunities({ limit: 200 });
           if (Array.isArray(opps)) {
             originalSetItem("luxen_general_cards", JSON.stringify(opps));
             rerenderAll();
           }
         })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'site_store' }, function (payload) {
-          if (payload && payload.new && payload.new.key) {
-            var valStr = typeof payload.new.value === "string" ? payload.new.value : JSON.stringify(payload.new.value);
+        .on("postgres_changes", { event: "*", schema: "public", table: "courses" }, async function () {
+          var crs = await ElevateSupabase.fetchCourses();
+          if (Array.isArray(crs)) {
+            originalSetItem("luxen_courses", JSON.stringify(crs));
+            rerenderAll();
+          }
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "community_messages" }, async function () {
+          var msgs = await ElevateSupabase.fetchCommunityMessages(100);
+          if (Array.isArray(msgs)) {
+            originalSetItem(
+              "luxen_community_messages",
+              JSON.stringify(
+                msgs.map(function (m) {
+                  return {
+                    id: m.id,
+                    sender: m.sender_username || m.user_name || "user",
+                    senderName: m.sender_name || m.user_name || "عضو",
+                    role: m.role || "member",
+                    roleTitle: m.role_title || null,
+                    text: m.content || "",
+                    type: m.msg_type || "text",
+                    mediaUrl: m.media_url || null,
+                    replyTo: m.reply_to || null,
+                    reactions: m.reactions || {},
+                    timestamp: m.timestamp || Date.parse(m.created_at) || Date.now(),
+                  };
+                }),
+              ),
+            );
+            rerenderAll();
+          }
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "private_messages" }, async function () {
+          if (!ElevateSupabase.isAuthenticated()) return;
+          var privRows = await ElevateSupabase.fetchPrivateMessages();
+          var grouped = {};
+          privRows.forEach(function (pm) {
+            if (!grouped[pm.chat_key]) grouped[pm.chat_key] = [];
+            grouped[pm.chat_key].push({
+              id: pm.id,
+              sender: pm.sender_username,
+              senderName: pm.sender_name || pm.sender_username,
+              receiver: pm.receiver_username,
+              text: pm.text || "",
+              type: pm.msg_type || "text",
+              mediaUrl: pm.media_url || null,
+              replyTo: pm.reply_to || null,
+              reactions: pm.reactions || {},
+              timestamp: pm.timestamp || Date.parse(pm.created_at) || Date.now(),
+            });
+          });
+          originalSetItem("luxen_private_chats", JSON.stringify(grouped));
+          rerenderAll();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "item_comments" }, async function () {
+          hydrateComments(await ElevateSupabase.fetchComments());
+          rerenderAll();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "item_engagements" }, async function () {
+          hydrateEngagements(await ElevateSupabase.fetchEngagements());
+          rerenderAll();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "site_store" }, function (payload) {
+          if (payload && payload.new && payload.new.key && SYNCED_STORE_KEYS.indexOf(payload.new.key) !== -1) {
+            var valStr =
+              typeof payload.new.value === "string"
+                ? payload.new.value
+                : JSON.stringify(payload.new.value);
             originalSetItem(payload.new.key, valStr);
             rerenderAll();
           }
         })
         .subscribe();
     } catch (e) {
-      console.warn("[Elevate] Realtime notice:", e);
+      console.warn("[ElevateDB] Realtime notice:", e);
     }
   }
 
-  // ElevateDB public methods with Instant Optimistic UI
   window.ElevateDB = {
-    keys: SYNCED_KEYS,
+    keys: SYNCED_STORE_KEYS,
     get isReady() {
       return isCloudReady;
     },
     savePartner: async function (partner) {
       if (!partner) return;
       var list = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
-      var idx = list.findIndex(function (p) { return String(p.id) === String(partner.id); });
+      var idx = list.findIndex(function (p) {
+        return String(p.id) === String(partner.id);
+      });
       if (idx !== -1) list[idx] = partner;
       else list.unshift(partner);
       originalSetItem("luxen_partners", JSON.stringify(list));
       rerenderAll();
-      try {
-        await window.ElevateSupabase.savePartner(partner);
-        await window.ElevateSupabase.saveStoreKey("luxen_partners", list);
-      } catch (e) {}
+      await ElevateSupabase.savePartner(partner);
     },
     deletePartner: async function (id) {
       if (!id) return;
-      var list = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
-      list = list.filter(function (p) { return String(p.id) !== String(id); });
+      var list = JSON.parse(localStorage.getItem("luxen_partners") || "[]").filter(function (p) {
+        return String(p.id) !== String(id);
+      });
       originalSetItem("luxen_partners", JSON.stringify(list));
       rerenderAll();
-      try {
-        await window.ElevateSupabase.deletePartner(id);
-        await window.ElevateSupabase.saveStoreKey("luxen_partners", list);
-      } catch (e) {}
+      await ElevateSupabase.deletePartner(id);
     },
     saveOpportunity: async function (opp) {
       if (!opp) return;
       var list = JSON.parse(localStorage.getItem("luxen_general_cards") || "[]");
-      var idx = list.findIndex(function (c) { return String(c.id) === String(opp.id); });
+      var idx = list.findIndex(function (c) {
+        return String(c.id) === String(opp.id);
+      });
       if (idx !== -1) list[idx] = opp;
       else list.unshift(opp);
       originalSetItem("luxen_general_cards", JSON.stringify(list));
       rerenderAll();
-      try {
-        await window.ElevateSupabase.saveOpportunity(opp);
-        await window.ElevateSupabase.saveStoreKey("luxen_general_cards", list);
-      } catch (e) {}
+      await ElevateSupabase.saveOpportunity(opp);
     },
     deleteOpportunity: async function (id) {
       if (!id) return;
-      var list = JSON.parse(localStorage.getItem("luxen_general_cards") || "[]");
-      list = list.filter(function (c) { return String(c.id) !== String(id); });
+      var list = JSON.parse(localStorage.getItem("luxen_general_cards") || "[]").filter(function (c) {
+        return String(c.id) !== String(id);
+      });
       originalSetItem("luxen_general_cards", JSON.stringify(list));
       rerenderAll();
-      try {
-        await window.ElevateSupabase.deleteOpportunity(id);
-        await window.ElevateSupabase.saveStoreKey("luxen_general_cards", list);
-      } catch (e) {}
+      await ElevateSupabase.deleteOpportunity(id);
+    },
+    saveCourse: async function (course) {
+      if (!course) return;
+      var list = JSON.parse(localStorage.getItem("luxen_courses") || "[]");
+      var idx = list.findIndex(function (c) {
+        return String(c.id) === String(course.id);
+      });
+      if (idx !== -1) list[idx] = course;
+      else list.unshift(course);
+      originalSetItem("luxen_courses", JSON.stringify(list));
+      rerenderAll();
+      await ElevateSupabase.saveCourse(course);
+    },
+    deleteCourse: async function (id) {
+      if (!id) return;
+      var list = JSON.parse(localStorage.getItem("luxen_courses") || "[]").filter(function (c) {
+        return String(c.id) !== String(id);
+      });
+      originalSetItem("luxen_courses", JSON.stringify(list));
+      rerenderAll();
+      await ElevateSupabase.deleteCourse(id);
     },
     refresh: function () {
       return syncFromCloud();
     },
     onReady: function (fn) {
       if (isCloudReady) {
-        try { fn(); } catch (e) {}
+        try {
+          fn();
+        } catch (e) {}
       } else {
         readyCallbacks.push(fn);
       }
-    }
+    },
   };
 
-  // STEP 1: Render immediately from cache (0ms instant display)
   rerenderAll();
-
-  // STEP 2: Background cloud synchronization
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       rerenderAll();
@@ -341,5 +580,4 @@
   } else {
     setTimeout(syncFromCloud, 20);
   }
-
 })();

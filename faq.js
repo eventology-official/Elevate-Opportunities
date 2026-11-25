@@ -34,6 +34,9 @@
   }
   function write(items) {
     localStorage.setItem(KEY, JSON.stringify(items));
+    if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.saveStoreKey(KEY, items).catch(function () {});
+    }
   }
   function esc(v) {
     return String(v === undefined || v === null ? "" : v)

@@ -86,6 +86,9 @@
     if (!u) return;
     var merged = Object.assign({}, u, patch);
     localStorage.setItem("ns_user", JSON.stringify(merged));
+    if (window.ElevateSupabase && ElevateSupabase.isAuthenticated()) {
+      ElevateSupabase.callAuthGateway("update_profile", { patch: patch }).catch(function () {});
+    }
     var all = readJSON("luxen_all_users", []);
     if (Array.isArray(all)) {
       var changed = false;
