@@ -56,6 +56,22 @@ const Admin = {
     document.querySelectorAll(".admin-nav-btn").forEach((b) => {
       b.classList.toggle("active", b.getAttribute("data-sec") === secId);
     });
+    if (secId === "adm-sec-opps") {
+      this.renderManageList();
+    }
+    if (secId === "adm-sec-partners") {
+      this.renderManagePartners();
+    }
+    if (secId === "adm-sec-dates") {
+      this.renderDatedList();
+      this.renderUndatedList();
+    }
+    if (secId === "adm-sec-members") {
+      this.renderMembers();
+    }
+    if (secId === "adm-sec-team") {
+      this.renderTeam();
+    }
     if (
       secId === "adm-sec-vault" &&
       window.CommunityAdmin &&
@@ -376,7 +392,7 @@ const Admin = {
     if (oppsCountEl) oppsCountEl.textContent = cards.length;
     if (usersCountEl)
       usersCountEl.textContent =
-        normalMembers.length > 0 ? normalMembers.length : users.length > 0 ? users.length : 1542;
+        normalMembers.length > 0 ? normalMembers.length : 0;
     if (partnersCountEl) partnersCountEl.textContent = partners.length;
     if (interactionsCountEl) interactionsCountEl.textContent = comments.length + totalLikes;
     if (datedCountEl) datedCountEl.textContent = dated.length;
@@ -1069,6 +1085,7 @@ const Admin = {
     localStorage.setItem("luxen_partners", JSON.stringify(partners));
     this.closePartnerModal();
     this.renderManagePartners();
+    this.updateCounters();
     App.renderPartners();
     alert("تم حفظ بيانات الشريك بنجاح!");
   },
@@ -1076,16 +1093,18 @@ const Admin = {
   renderManagePartners() {
     let partners = JSON.parse(localStorage.getItem("luxen_partners") || "[]");
     let listEl = document.getElementById("admin-manage-partners-list");
+    const countBadge = document.getElementById("admin-partners-count-badge");
+    if (countBadge) countBadge.textContent = partners.length + " شريك";
     if (!listEl) return;
     listEl.innerHTML = "";
 
-    if (partners.length === 0) {
+    if (!Array.isArray(partners) || partners.length === 0) {
       listEl.innerHTML =
         '<div style="text-align:center; padding: 30px; border: 1px dashed var(--border-color); border-radius: 12px; color: var(--text-muted);">لا يوجد شركاء مضافين حالياً.</div>';
       return;
     }
 
-    partners.reverse().forEach((p) => {
+    partners.slice().reverse().forEach((p) => {
       let safeLogo = p.logo ? p.logo : "images/logo.png";
       listEl.innerHTML += `
                 <div class="admin-manage-item">
@@ -1224,6 +1243,7 @@ const Admin = {
       partners = partners.filter((p) => p.id != id);
       localStorage.setItem("luxen_partners", JSON.stringify(partners));
       this.renderManagePartners();
+      this.updateCounters();
       App.renderPartners();
     }
   },

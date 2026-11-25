@@ -1,20 +1,24 @@
 /**
  * =====================================================================
- * Elevate Platform — Admin Core Functions
+ * Elevate Platform — Admin Core Functions (Speed & Navigation Engine)
  * =====================================================================
- * الدوال الأساسية للوحة تحكم المدير
+ * يضمن التنقل الفوري اللحظي بين أقسام لوحة الإدارة وتحديث القوائم والشركاء فوراً
  * =====================================================================
  */
 
-// Create Admin object if not exists
 if (typeof window.Admin === 'undefined') {
   window.Admin = {};
 }
 
-// Switch between admin sections
+// Ensure alias between renderManagePartners and renderPartnersList
+Admin.renderPartnersList = function() {
+  if (typeof Admin.renderManagePartners === 'function') {
+    Admin.renderManagePartners();
+  }
+};
+
+// Switch between admin sections with instant dynamic rendering
 Admin.switchSection = function(sectionId) {
-  console.log('[Admin] Switching to section:', sectionId);
-  
   // Hide all sections
   const sections = document.querySelectorAll('.admin-section');
   sections.forEach(function(section) {
@@ -33,9 +37,6 @@ Admin.switchSection = function(sectionId) {
   if (targetSection) {
     targetSection.style.display = 'block';
     targetSection.classList.add('active');
-    console.log('[Admin] ✓ Section shown:', sectionId);
-  } else {
-    console.error('[Admin] ✗ Section not found:', sectionId);
   }
   
   // Add active class to clicked button
@@ -44,15 +45,50 @@ Admin.switchSection = function(sectionId) {
     targetButton.classList.add('active');
   }
   
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Render section data immediately
+  try {
+    if (sectionId === 'adm-sec-opps') {
+      if (typeof Admin.renderManageList === 'function') Admin.renderManageList();
+    } else if (sectionId === 'adm-sec-partners') {
+      if (typeof Admin.renderManagePartners === 'function') Admin.renderManagePartners();
+    } else if (sectionId === 'adm-sec-dates') {
+      if (typeof Admin.renderDatedList === 'function') Admin.renderDatedList();
+      if (typeof Admin.renderUndatedList === 'function') Admin.renderUndatedList();
+    } else if (sectionId === 'adm-sec-members') {
+      if (typeof Admin.renderMembers === 'function') Admin.renderMembers();
+    } else if (sectionId === 'adm-sec-team') {
+      if (typeof Admin.renderTeam === 'function') Admin.renderTeam();
+    } else if (sectionId === 'adm-sec-visibility') {
+      if (typeof Admin.renderSectionsVisibility === 'function') Admin.renderSectionsVisibility();
+    } else if (sectionId === 'adm-sec-vault' && window.CommunityAdmin && typeof CommunityAdmin.render === 'function') {
+      CommunityAdmin.render();
+    } else if (sectionId === 'adm-sec-teachers' && window.AdminTeachersApp && typeof AdminTeachersApp.init === 'function') {
+      AdminTeachersApp.init();
+    } else if (sectionId === 'adm-sec-lockdown' && window.ElevateLockdown && typeof ElevateLockdown.renderAdminSectionUI === 'function') {
+      ElevateLockdown.renderAdminSectionUI();
+    }
+
+    if (typeof Admin.updateCounters === 'function') {
+      Admin.updateCounters();
+    }
+  } catch (e) {
+    console.warn('[Admin] Render section notice:', e);
+  }
+
+  // Smooth scroll to top of panel
+  try {
+    const container = document.getElementById('prof-admin-tab');
+    if (container) {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  } catch (e) {}
 };
 
-// Initialize function - محسّن للسرعة
+// Master Admin.init
 Admin.init = function() {
-  console.log('[Admin] تهيئة سريعة...');
+  console.log('[Admin] تهيئة سريعة وشاملة...');
   
-  // Setup nav buttons - بدون await
+  // Setup nav buttons listeners
   const navButtons = document.querySelectorAll('.admin-nav-btn');
   navButtons.forEach(function(btn) {
     const sectionId = btn.getAttribute('data-sec');
@@ -64,23 +100,21 @@ Admin.init = function() {
       });
     }
   });
-  
-  // Render data lists - فقط اللي موجود
-  setTimeout(function() {
-    if (typeof Admin.renderManageList === 'function') {
-      Admin.renderManageList();
-    }
-    
-    if (typeof Admin.renderPartnersList === 'function') {
-      Admin.renderPartnersList();
-    }
-    
-    if (typeof Admin.updateCounters === 'function') {
-      Admin.updateCounters();
-    }
-  }, 50);
-  
-  console.log('[Admin] ✓ جاهز');
+
+  // Render everything immediately (0ms)
+  try {
+    if (typeof Admin.updateCounters === 'function') Admin.updateCounters();
+    if (typeof Admin.renderManageList === 'function') Admin.renderManageList();
+    if (typeof Admin.renderDatedList === 'function') Admin.renderDatedList();
+    if (typeof Admin.renderUndatedList === 'function') Admin.renderUndatedList();
+    if (typeof Admin.renderManagePartners === 'function') Admin.renderManagePartners();
+    if (typeof Admin.renderMembers === 'function') Admin.renderMembers();
+    if (typeof Admin.renderTeam === 'function') Admin.renderTeam();
+    if (typeof Admin.renderSectionsVisibility === 'function') Admin.renderSectionsVisibility();
+    if (window.AdminTeachersApp && typeof AdminTeachersApp.init === 'function') AdminTeachersApp.init();
+  } catch (e) {
+    console.warn('[Admin] Init render error:', e);
+  }
 };
 
-console.log('[Admin] Core module loaded');
+console.log('[Admin] Core module loaded with full navigation');
